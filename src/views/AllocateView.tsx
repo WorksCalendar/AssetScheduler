@@ -23,6 +23,11 @@ export interface AllocateViewProps {
   dispatches: readonly DispatchRequirements[];
   candidates: readonly ResourceCandidate[];
   options?: EvaluateOptions;
+  /** Resource ids currently assigned to each dispatch, keyed by dispatch id. */
+  assignments?: Readonly<Record<string, readonly string[]>>;
+  /** Toggle a candidate's assignment to a dispatch (host writes it back to
+   *  the calendar as a scheduled event). */
+  onToggleAssign?: (dispatchId: string, candidateId: string) => void;
 }
 
 const STATUS_TAG: Record<CheckStatus, string> = {
@@ -48,9 +53,15 @@ function reqChips(d: DispatchRequirements): { label: string; value: string }[] {
 function CandidateCard({
   candidate,
   evaluation,
+  assigned,
+  canAssign,
+  onAssign,
 }: {
   candidate: ResourceCandidate;
   evaluation: CandidateEvaluation;
+  assigned: boolean;
+  canAssign: boolean;
+  onAssign: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const failing = evaluation.checks.filter((c) => c.status !== 'green');
@@ -58,10 +69,11 @@ function CandidateCard({
   const shown = open ? evaluation.checks : failing;
 
   return (
-    <button type="button" className={cls['card']} data-status={evaluation.status} onClick={() => setOpen((v) => !v)}>
+    <div className={cls['card']} data-status={evaluation.status} data-assigned={assigned || undefined}>
       <div className={cls['cardTop']}>
         <span className={cls['dot']} data-status={evaluation.status} />
         <span className={cls['cardName']}>{candidate.label}</span>
+        {assigned && <span className={cls['assignedTag']}>ASSIGNED</span>}
         <span className={cls['statusTag']} data-status={evaluation.status}>
           {STATUS_TAG[evaluation.status]}
         </span>
@@ -81,19 +93,46 @@ function CandidateCard({
         </div>
       )}
 
-      {!open && passed > 0 && (
+      <div className={cls['cardFoot']}>
         <div className={cls['passNote']}>
-          {failing.length > 0 ? `+${passed} check${passed === 1 ? '' : 's'} passed · ` : `All ${passed} checks passed · `}
-          tap for detail
+          {evaluation.checks.length === 0
+            ? 'No requirements'
+            : failing.length === 0
+              ? `All ${passed} checks passed`
+              : `${failing.length} of ${evaluation.checks.length} flagged`}
         </div>
-      )}
-    </button>
+        <div className={cls['actions']}>
+          {evaluation.checks.length > 0 && (
+            <button type="button" className={cls['detailsBtn']} onClick={() => setOpen((v) => !v)}>
+              {open ? 'Hide' : 'Details'}
+            </button>
+          )}
+          {canAssign && (
+            <button
+              type="button"
+              className={cls['assignBtn']}
+              data-assigned={assigned || undefined}
+              onClick={onAssign}
+            >
+              {assigned ? 'Assigned ✓' : 'Assign'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
-export function AllocateView({ dispatches, candidates, options }: AllocateViewProps) {
+export function AllocateView({
+  dispatches,
+  candidates,
+  options,
+  assignments,
+  onToggleAssign,
+}: AllocateViewProps) {
   const [selectedId, setSelectedId] = useState(dispatches[0]?.id ?? '');
   const selected = dispatches.find((d) => d.id === selectedId) ?? dispatches[0];
+  const assignedHere = new Set(selected ? assignments?.[selected.id] ?? [] : []);
 
   const evaluations = useMemo(() => {
     if (!selected) return new Map<string, CandidateEvaluation>();
@@ -174,6 +213,11 @@ export function AllocateView({ dispatches, candidates, options }: AllocateViewPr
           <span className={cls['dot']} data-status="red" />
           <span className={cls['summaryNum']}>{counts.red}</span> unavailable
         </span>
+        {assignedHere.size > 0 && (
+          <span className={cls['summaryItem']} data-assigned>
+            <span className={cls['summaryNum']}>{assignedHere.size}</span> assigned
+          </span>
+        )}
       </div>
 
       {(['asset', 'crew'] as const).map((kind) => {
@@ -185,7 +229,16 @@ export function AllocateView({ dispatches, candidates, options }: AllocateViewPr
             <div className={cls['cards']}>
               {list.map((c) => {
                 const e = evaluations.get(c.id);
-                return e ? <CandidateCard key={c.id} candidate={c} evaluation={e} /> : null;
+                return e ? (
+                  <CandidateCard
+                    key={c.id}
+                    candidate={c}
+                    evaluation={e}
+                    assigned={assignedHere.has(c.id)}
+                    canAssign={onToggleAssign != null}
+                    onAssign={() => onToggleAssign?.(selected.id, c.id)}
+                  />
+                ) : null;
               })}
             </div>
           </div>

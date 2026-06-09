@@ -77,6 +77,57 @@
 .card[data-status='green'] { border-left-color: var(--ops-ok, #16a34a); }
 .card[data-status='amber'] { border-left-color: var(--ops-warn, #d97706); }
 .card[data-status='red']   { border-left-color: var(--ops-bad, #dc2626); }
+.card[data-assigned] {
+  border-color: var(--ops-accent, #2563eb);
+  box-shadow: 0 0 0 1px var(--ops-accent, #2563eb) inset, var(--ops-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.06));
+}
+
+.summaryItem[data-assigned] { color: var(--ops-accent, #2563eb); }
+.assignedTag {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--ops-accent, #2563eb);
+  border: 1px solid var(--ops-accent, #2563eb);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+.actions { display: flex; align-items: center; gap: 6px; }
+.detailsBtn {
+  border: 0;
+  background: transparent;
+  color: var(--ops-text-faint, #8b939c);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+.detailsBtn:hover { color: var(--ops-text-muted, #5b636c); }
+.assignBtn {
+  border: 1px solid var(--ops-accent, #2563eb);
+  background: var(--ops-accent, #2563eb);
+  color: #fff;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.assignBtn:hover { filter: brightness(1.06); }
+.assignBtn[data-assigned] {
+  background: color-mix(in srgb, var(--ops-accent, #2563eb) 14%, transparent);
+  color: var(--ops-accent, #2563eb);
+}
 
 .cardTop { display: flex; align-items: center; gap: 8px; }
 .dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }

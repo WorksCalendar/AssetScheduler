@@ -21,6 +21,7 @@ import type {
   LocationAsset,
   ResourceCandidate,
   DispatchRequirements,
+  WorksCalendarEvent,
 } from '../src/index';
 
 const TABS: readonly OpsTab[] = [
@@ -58,6 +59,8 @@ export function OpsConsole({
 }: OpsConsoleProps) {
   const [mode, setMode] = useState<OpsThemeMode>(initialMode);
   const [activeTab, setActiveTab] = useState<string>('dispatch');
+  // dispatchId → assigned candidate ids.
+  const [assignments, setAssignments] = useState<Record<string, string[]>>({});
   const apiRef = useRef<CalendarApi>(null);
 
   const handleTabChange = (id: string) => {
@@ -66,6 +69,59 @@ export function OpsConsole({
       apiRef.current?.setView(id as WorksCalendarProps['initialView']);
     }
   };
+
+  const handleToggleAssign = (dispatchId: string, candidateId: string) => {
+    setAssignments((prev) => {
+      const current = prev[dispatchId] ?? [];
+      const next = current.includes(candidateId)
+        ? current.filter((id) => id !== candidateId)
+        : [...current, candidateId];
+      return { ...prev, [dispatchId]: next };
+    });
+  };
+
+  // Each assignment becomes a scheduled calendar event (category 'shift') on
+  // the assigned resource's row, so committing a resource in the Allocate tab
+  // shows up live on the Schedule tab.
+  const assignmentEvents = useMemo<WorksCalendarEvent[]>(() => {
+    const dispatchById = new Map(dispatches.map((d) => [d.id, d]));
+    const resourceById = new Map(resources.map((r) => [r.id, r]));
+    const events: WorksCalendarEvent[] = [];
+    for (const [dispatchId, ids] of Object.entries(assignments)) {
+      const d = dispatchById.get(dispatchId);
+      if (!d) continue;
+      for (const candidateId of ids) {
+        const r = resourceById.get(candidateId);
+        if (!r) continue;
+        // Crew candidate ids are prefixed 'drv-'; the schedule row id is the
+        // underlying fleet/employee id.
+        const fleetId = candidateId.startsWith('drv-') ? candidateId.slice(4) : candidateId;
+        events.push({
+          id: `assign-${dispatchId}-${candidateId}`,
+          title: `${d.label} — ${r.label}`,
+          start: new Date(d.start),
+          end: new Date(d.end),
+          allDay: false,
+          resource: fleetId,
+          category: 'shift',
+          meta: {
+            kind: 'shift',
+            assignment: true,
+            dispatchId,
+            resourceId: candidateId,
+            status: 'scheduled',
+            ...(r.color ? { color: r.color } : {}),
+          },
+        });
+      }
+    }
+    return events;
+  }, [assignments, dispatches, resources]);
+
+  const mergedEvents = useMemo<readonly WorksCalendarEvent[]>(
+    () => [...(calendar.events ?? []), ...assignmentEvents],
+    [calendar.events, assignmentEvents],
+  );
 
   const subHeader = useMemo(() => {
     if (activeTab === 'locations') {
@@ -105,16 +161,23 @@ export function OpsConsole({
       {...(subHeader ? { subHeader } : {})}
     >
       <div style={{ position: 'relative', height: '100%', width: '100%' }}>
-        <WorksCalendar
-          {...calendar}
-          ref={apiRef}
-          initialView="dispatch"
-          theme={mode === 'dark' ? 'ops-dark' : 'ops-light'}
-          showToolbar={false}
-          showLeftRail={false}
-          showRightPanel={false}
-          showViewSwitcher={false}
-        />
+        {/* Keep the calendar mounted (state + map persist) but hidden while an
+            overlay tab is active — otherwise its sticky headers, which sit in
+            the page stacking context, would render over the overlay and steal
+            clicks. */}
+        <div style={{ height: '100%', display: OVERLAY_TABS.has(activeTab) ? 'none' : 'block' }}>
+          <WorksCalendar
+            {...calendar}
+            events={mergedEvents}
+            ref={apiRef}
+            initialView="dispatch"
+            theme={mode === 'dark' ? 'ops-dark' : 'ops-light'}
+            showToolbar={false}
+            showLeftRail={false}
+            showRightPanel={false}
+            showViewSwitcher={false}
+          />
+        </div>
         {activeTab === 'locations' && (
           <div style={{ position: 'absolute', inset: 0, zIndex: 5 }}>
             <LocationsView
@@ -131,7 +194,12 @@ export function OpsConsole({
         )}
         {activeTab === 'allocate' && (
           <div style={{ position: 'absolute', inset: 0, zIndex: 5 }}>
-            <AllocateView dispatches={dispatches} candidates={resources} />
+            <AllocateView
+              dispatches={dispatches}
+              candidates={resources}
+              assignments={assignments}
+              onToggleAssign={handleToggleAssign}
+            />
           </div>
         )}
       </div>
