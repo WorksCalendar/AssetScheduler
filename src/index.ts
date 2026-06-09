@@ -30,6 +30,15 @@ export type {
   LocationsViewProps, LocationItem, LocationAsset,
 } from './views/LocationsView';
 
+// ── Resource allocator (Allocate tab) ────────────────────────────────────────
+export { AllocateView } from './views/AllocateView';
+export type { AllocateViewProps } from './views/AllocateView';
+export { evaluateCandidate, evaluateAll, compareByStatus } from './allocator/evaluate';
+export type {
+  CheckStatus, ResourceKind, ResourceAttributes, ResourceCandidate,
+  DispatchRequirements, CheckResult, CandidateEvaluation, EvaluateOptions,
+} from './allocator/types';
+
 export type { BillableMeta, InvoiceLineItem, InvoiceStatus } from './types/billing';
 export type {
   AssetHealth,
