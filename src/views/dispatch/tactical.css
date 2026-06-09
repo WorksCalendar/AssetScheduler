@@ -1,0 +1,31 @@
+/* Tactical dispatch board palette.
+   The board historically hard-coded a parchment palette (#e8dcc8 / #f5e6c8
+   ink #3d2b1f). These variables let it follow the host light/dark theme:
+   defaults reproduce the parchment look, and the dark override (keyed off
+   WorksCalendar's [data-wc-theme-mode="dark"]) swaps in a slate palette so
+   the slider / sidebar / board chrome stop reading as brown in dark mode. */
+.dispatchBoard {
+  --tac-bg:        #e8dcc8; /* board backdrop */
+  --tac-panel:     #f5e6c8; /* slider + sidebar surfaces */
+  --tac-bg-2:      #d4c4a8; /* header / footer chrome */
+  --tac-ink:       #3d2b1f; /* primary text + strong lines */
+  --tac-ink-soft:  #5a3e2b; /* secondary text */
+  --tac-sel:       #3d2b1f; /* selected row background */
+  --tac-sel-ink:   #f5e6c8; /* text on selected row */
+  --tac-line:      rgba(61, 43, 31, 0.28);
+  --tac-line-soft: rgba(61, 43, 31, 0.12);
+  --tac-hover:     rgba(61, 43, 31, 0.08);
+}
+
+[data-wc-theme-mode='dark'] .dispatchBoard {
+  --tac-bg:        #0d1218;
+  --tac-panel:     #161d25;
+  --tac-bg-2:      #111821;
+  --tac-ink:       #e6edf3;
+  --tac-ink-soft:  #9fb0bf;
+  --tac-sel:       #2a3a4d;
+  --tac-sel-ink:   #eef2f6;
+  --tac-line:      rgba(230, 237, 243, 0.18);
+  --tac-line-soft: rgba(230, 237, 243, 0.09);
+  --tac-hover:     rgba(230, 237, 243, 0.08);
+}

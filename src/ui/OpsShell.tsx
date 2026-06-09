@@ -56,7 +56,36 @@ export interface OpsShellProps {
   onTabChange: (id: string) => void;
   mode: OpsThemeMode;
   onToggleMode?: () => void;
+  /**
+   * Optional bar rendered between the banner and the body — the home for an
+   * active view's title/icon so views without their own header (e.g.
+   * Locations) don't have to crowd their content with one. Pair with
+   * {@link OpsViewHeader}.
+   */
+  subHeader?: ReactNode;
   children: ReactNode;
+}
+
+export interface OpsViewHeaderProps {
+  icon?: ReactNode;
+  title: string;
+  subtitle?: string;
+  /** Right-aligned content (filters, actions). */
+  actions?: ReactNode;
+}
+
+/** Standardised view title bar for the OpsShell sub-header slot. */
+export function OpsViewHeader({ icon, title, subtitle, actions }: OpsViewHeaderProps) {
+  return (
+    <div className={cls['viewHead']}>
+      {icon && <div className={cls['viewHeadIcon']}>{icon}</div>}
+      <div className={cls['viewHeadText']}>
+        <div className={cls['viewHeadTitle']}>{title}</div>
+        {subtitle && <div className={cls['viewHeadSub']}>{subtitle}</div>}
+      </div>
+      {actions && <div className={cls['viewHeadActions']}>{actions}</div>}
+    </div>
+  );
 }
 
 const DEFAULT_BANNER_BG =
@@ -77,6 +106,7 @@ export function OpsShell({
   onTabChange,
   mode,
   onToggleMode,
+  subHeader,
   children,
 }: OpsShellProps) {
   return (
@@ -123,6 +153,8 @@ export function OpsShell({
           </div>
         )}
       </header>
+
+      {subHeader && <div className={cls['subbar']}>{subHeader}</div>}
 
       <div className={cls['body']}>{children}</div>
 

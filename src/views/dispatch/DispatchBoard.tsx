@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { startOfDay, endOfDay } from 'date-fns';
 import '../../styles/tailwind.css';
+import './tactical.css';
 import { TacticalMap } from './TacticalMap';
 import { AssetSidebar } from './AssetSidebar';
 import { TimeSlider } from './TimeSlider';
@@ -146,9 +147,9 @@ export function DispatchBoard({
   }, [events, selectedDate]);
 
   return (
-    <div className="h-full w-full flex flex-col overflow-hidden" style={{ background: '#e8dcc8' }}>
+    <div className="dispatchBoard h-full w-full flex flex-col overflow-hidden" style={{ background: 'var(--tac-bg)' }}>
       {/* Header */}
-      <header className="h-10 flex items-center px-3 border-b-2 border-[#3d2b1f]/30 bg-[#d4c4a8] flex-shrink-0 gap-2">
+      <header className="h-10 flex items-center px-3 border-b-2 border-[color:var(--tac-line)] bg-[var(--tac-bg-2)] flex-shrink-0 gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {viewSwitcher}
           <DatePickerDropdown
@@ -184,7 +185,7 @@ export function DispatchBoard({
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#c0392b]">
               <span className="w-2 h-2 rounded-full bg-[#c0392b] animate-pulse" />
               {todayConflicts.length} CONFLICTS
-              <span className="text-[#5a3e2b] font-normal ml-1">
+              <span className="text-[var(--tac-ink-soft)] font-normal ml-1">
                 ({conflictFacilities.size} facilities)
               </span>
             </div>
@@ -192,7 +193,7 @@ export function DispatchBoard({
           <div className="flex gap-1">
             <button
               type="button"
-              className="h-6 text-[10px] px-2 bg-transparent border border-[#3d2b1f]/30 text-[#3d2b1f] hover:bg-[#3d2b1f]/10 rounded-sm"
+              className="h-6 text-[10px] px-2 bg-transparent border border-[color:var(--tac-line)] text-[var(--tac-ink)] hover:bg-[var(--tac-hover)] rounded-sm"
               onClick={() => setSelectedAsset(null)}
             >
               CLEAR
@@ -238,10 +239,10 @@ export function DispatchBoard({
                 <button
                   key={l.id}
                   className={[
-                    'px-2 py-1 text-[10px] font-bold border border-[#3d2b1f]/30 transition-colors rounded-sm',
+                    'px-2 py-1 text-[10px] font-bold border border-[color:var(--tac-line)] transition-colors rounded-sm',
                     active
-                      ? 'bg-[#3d2b1f] text-[#f5e6c8]'
-                      : 'bg-[#f5e6c8]/90 text-[#3d2b1f] hover:bg-[#3d2b1f]/10',
+                      ? 'bg-[var(--tac-sel)] text-[var(--tac-sel-ink)]'
+                      : 'bg-[var(--tac-panel)] text-[var(--tac-ink)] hover:bg-[var(--tac-hover)]',
                   ].join(' ')}
                   onClick={() => setLayer(l.id)}
                 >
@@ -252,9 +253,9 @@ export function DispatchBoard({
           </div>
 
           {/* Legend */}
-          <div className="absolute bottom-3 left-3 bg-[#f5e6c8]/90 border border-[#3d2b1f]/30 p-2 rounded-sm text-[9px] text-[#5a3e2b]">
+          <div className="absolute bottom-3 left-3 bg-[var(--tac-panel)] border border-[color:var(--tac-line)] p-2 rounded-sm text-[9px] text-[var(--tac-ink-soft)]">
             <div className="flex items-center gap-1.5 mb-0.5">
-              <span className="inline-block w-3 h-1 bg-[#3d2b1f]" />
+              <span className="inline-block w-3 h-1 bg-[var(--tac-sel)]" />
               <span>Traveled</span>
             </div>
             <div className="flex items-center gap-1.5 mb-0.5">
@@ -281,8 +282,8 @@ export function DispatchBoard({
       </div>
 
       {/* Footer */}
-      <div className="h-7 flex items-center justify-between px-4 border-t-2 border-[#3d2b1f]/30 bg-[#d4c4a8] flex-shrink-0">
-        <div className="flex items-center gap-3 text-[9px] text-[#5a3e2b]">
+      <div className="h-7 flex items-center justify-between px-4 border-t-2 border-[color:var(--tac-line)] bg-[var(--tac-bg-2)] flex-shrink-0">
+        <div className="flex items-center gap-3 text-[9px] text-[var(--tac-ink-soft)]">
           <span>{derived.assets.length} ASSETS</span>
           <span>{derived.facilities.length} FACILITIES</span>
           <span>{todayConflicts.length} ACTIVE CONFLICTS</span>

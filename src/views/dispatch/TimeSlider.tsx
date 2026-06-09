@@ -123,11 +123,11 @@ export function TimeSlider({
   };
 
   return (
-    <div className="h-full flex bg-[#f5e6c8] border-t-2 border-[#3d2b1f]/30">
+    <div className="h-full flex bg-[var(--tac-panel)] border-t-2 border-[color:var(--tac-line)]">
       {/* Day + Hour controls */}
-      <div className="w-64 flex-shrink-0 border-r border-[#3d2b1f]/20 px-3 py-2 flex flex-col justify-center gap-2">
+      <div className="w-64 flex-shrink-0 border-r border-[color:var(--tac-line)] px-3 py-2 flex flex-col justify-center gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-serif text-[#5a3e2b] uppercase tracking-wider w-8">Day</span>
+          <span className="text-[10px] font-serif text-[var(--tac-ink-soft)] uppercase tracking-wider w-8">Day</span>
           <Slider
             value={[currentDay]}
             onValueChange={handleDayChange}
@@ -136,13 +136,13 @@ export function TimeSlider({
             step={1}
             className="flex-1"
           />
-          <span className="text-[10px] font-bold text-[#3d2b1f] w-16 text-right">
+          <span className="text-[10px] font-bold text-[var(--tac-ink)] w-16 text-right">
             {days[currentDay]?.label ?? ''}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-serif text-[#5a3e2b] uppercase tracking-wider w-8">Hr</span>
+          <span className="text-[10px] font-serif text-[var(--tac-ink-soft)] uppercase tracking-wider w-8">Hr</span>
           <Slider
             value={[selectedDate.getUTCHours()]}
             onValueChange={handleHourChange}
@@ -151,7 +151,7 @@ export function TimeSlider({
             step={1}
             className="flex-1"
           />
-          <span className="text-[10px] font-bold text-[#3d2b1f] w-16 text-right">
+          <span className="text-[10px] font-bold text-[var(--tac-ink)] w-16 text-right">
             {selectedDate.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true, timeZone: 'UTC' })}
           </span>
         </div>
@@ -182,16 +182,16 @@ export function TimeSlider({
                 style={{ background: selectedAssetData.color }}
                 aria-hidden
               />
-              <span className="text-[10px] font-serif text-[#3d2b1f] uppercase tracking-wider truncate">
+              <span className="text-[10px] font-serif text-[var(--tac-ink)] uppercase tracking-wider truncate">
                 {selectedAssetData.id} — {selectedAssetData.name}
               </span>
               {selectedAssetData.driverName && (
-                <span className="text-[10px] text-[#5a3e2b] truncate">
+                <span className="text-[10px] text-[var(--tac-ink-soft)] truncate">
                   · {selectedAssetData.driverName}
                 </span>
               )}
             </div>
-            <div className="px-3 text-[10px] text-[#5a3e2b] truncate">
+            <div className="px-3 text-[10px] text-[var(--tac-ink-soft)] truncate">
               {(() => {
                 if (segments.length === 0) {
                   return <span className="italic text-[#7a6e5b]">No legs in window</span>;
@@ -222,7 +222,7 @@ export function TimeSlider({
                   const remaining = fmtDuration(active.to.time.getTime() - tSel);
                   return (
                     <>
-                      <span className="font-bold text-[#3d2b1f]">En route </span>
+                      <span className="font-bold text-[var(--tac-ink)]">En route </span>
                       {active.from.facilityCode} → {active.to.facilityCode} ·
                       <span className="font-bold"> {remaining}</span> to arrival ({fmtTime(active.to.time)})
                     </>
@@ -238,7 +238,7 @@ export function TimeSlider({
                     : '';
                   return (
                     <>
-                      <span className="font-bold text-[#3d2b1f]">Next </span>
+                      <span className="font-bold text-[var(--tac-ink)]">Next </span>
                       {upcoming.from.facilityCode} → {upcoming.to.facilityCode} · departs {fmtTime(upcoming.from.time)} (in <span className="font-bold">{until}</span>) · {drive} drive{est}
                     </>
                   );
@@ -246,7 +246,7 @@ export function TimeSlider({
                 if (last) {
                   return (
                     <>
-                      <span className="font-bold text-[#3d2b1f]">Last </span>
+                      <span className="font-bold text-[var(--tac-ink)]">Last </span>
                       {last.from.facilityCode} → {last.to.facilityCode} arrived {fmtTime(last.to.time)}
                     </>
                   );
@@ -257,16 +257,16 @@ export function TimeSlider({
 
             {/* Date headers strip — one cell per day, evenly distributed
                  across the timeline so bars align with their date column. */}
-            <div className="flex border-b border-[#3d2b1f]/20 mt-1">
+            <div className="flex border-b border-[color:var(--tac-line)] mt-1">
               {days.map((d) => (
                 <div
                   key={d.index}
-                  className="flex-1 px-1 py-0.5 text-center border-r border-[#3d2b1f]/10 last:border-r-0 leading-tight"
+                  className="flex-1 px-1 py-0.5 text-center border-r border-[color:var(--tac-line-soft)] last:border-r-0 leading-tight"
                   style={{ minWidth: 0 }}
                 >
                   <div
                     className="text-[9px] font-bold"
-                    style={{ color: d.isToday ? '#c0392b' : '#3d2b1f' }}
+                    style={{ color: d.isToday ? '#c0392b' : 'var(--tac-ink)' }}
                   >
                     {d.date.getUTCDate()}
                   </div>
@@ -285,7 +285,7 @@ export function TimeSlider({
               {Array.from({ length: windowDays + 1 }, (_, i) => (
                 <div
                   key={`grid-${i}`}
-                  className="absolute top-0 bottom-0 border-l border-[#3d2b1f]/15"
+                  className="absolute top-0 bottom-0 border-l border-[color:var(--tac-line-soft)]"
                   style={{ left: `${(i / windowDays) * 100}%` }}
                 />
               ))}
@@ -299,7 +299,7 @@ export function TimeSlider({
               )}
               {/* Selected-time cursor (solid black) */}
               <div
-                className="absolute top-0 bottom-0 border-l-2 border-[#3d2b1f] pointer-events-none"
+                className="absolute top-0 bottom-0 border-l-2 border-[color:var(--tac-ink)] pointer-events-none"
                 style={{
                   left: `${
                     ((currentDay * HOURS_PER_DAY + selectedDate.getUTCHours()) /
@@ -375,7 +375,7 @@ export function TimeSlider({
                       type="button"
                       onClick={() => onDateChange(new Date(seg.from.time))}
                       title={`${seg.from.facilityCode} → ${seg.to.facilityCode}\n${fmt(seg.from.time)} – ${fmt(seg.to.time)} (${durLabel})${estPart}${driverPart}`}
-                      className="absolute rounded-sm text-[10px] font-semibold text-white overflow-hidden whitespace-nowrap px-1.5 border border-black/15 hover:ring-2 hover:ring-[#3d2b1f] hover:z-10 focus:outline-none focus:ring-2 focus:ring-[#3d2b1f] focus:z-10"
+                      className="absolute rounded-sm text-[10px] font-semibold text-white overflow-hidden whitespace-nowrap px-1.5 border border-black/15 hover:ring-2 hover:ring-[color:var(--tac-ink)] hover:z-10 focus:outline-none focus:ring-2 focus:ring-[color:var(--tac-ink)] focus:z-10"
                       style={{
                         left: `${leftPct}%`,
                         width: `${widthPct}%`,
@@ -384,7 +384,7 @@ export function TimeSlider({
                         background: isPast ? selectedAssetData.color : '#999',
                         opacity: isPast ? 0.95 : 0.55,
                         boxShadow: isActive
-                          ? '0 0 0 2px #3d2b1f inset, 0 0 0 1px #f5e6c8'
+                          ? '0 0 0 2px var(--tac-ink) inset, 0 0 0 1px var(--tac-panel)'
                           : undefined,
                         display: 'flex',
                         alignItems: 'center',

@@ -6,6 +6,8 @@
   color: var(--ops-text, #16191d);
 }
 
+.root[data-no-header] { padding-top: 16px; }
+
 .head {
   display: flex;
   align-items: center;

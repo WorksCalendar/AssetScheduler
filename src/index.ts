@@ -21,9 +21,9 @@ export { default as EventStatusBadge } from './ui/EventStatusBadge';
 export type { EventStatusBadgeProps } from './ui/EventStatusBadge';
 
 // ── Ops-console shell (new layout) ───────────────────────────────────────────
-export { OpsShell, default as OpsShellDefault } from './ui/OpsShell';
+export { OpsShell, OpsViewHeader, default as OpsShellDefault } from './ui/OpsShell';
 export type {
-  OpsShellProps, OpsTab, OpsBanner, OpsPersona, OpsThemeMode,
+  OpsShellProps, OpsViewHeaderProps, OpsTab, OpsBanner, OpsPersona, OpsThemeMode,
 } from './ui/OpsShell';
 export { LocationsView } from './views/LocationsView';
 export type {

@@ -31,9 +31,12 @@ export interface LocationsViewProps {
   locations: readonly LocationItem[];
   assets: readonly LocationAsset[];
   onAssetClick?: (assetId: string) => void;
+  /** Render the in-body title bar. Set false when a host shell already
+   *  shows the view title (e.g. OpsShell's sub-header). Defaults to true. */
+  showHeader?: boolean;
 }
 
-export function LocationsView({ locations, assets, onAssetClick }: LocationsViewProps) {
+export function LocationsView({ locations, assets, onAssetClick, showHeader = true }: LocationsViewProps) {
   const byLocation = useMemo(() => {
     const map = new Map<string, LocationAsset[]>();
     for (const a of assets) {
@@ -45,19 +48,21 @@ export function LocationsView({ locations, assets, onAssetClick }: LocationsView
   }, [assets]);
 
   return (
-    <div className={cls['root']}>
-      <div className={cls['head']}>
-        <div className={cls['headIcon']}>
-          <MapPin size={18} />
-        </div>
-        <div>
-          <div className={cls['headTitle']}>Locations</div>
-          <div className={cls['headSub']}>
-            {locations.length} location{locations.length === 1 ? '' : 's'} · {assets.length} asset
-            {assets.length === 1 ? '' : 's'}
+    <div className={cls['root']} data-no-header={!showHeader || undefined}>
+      {showHeader && (
+        <div className={cls['head']}>
+          <div className={cls['headIcon']}>
+            <MapPin size={18} />
+          </div>
+          <div>
+            <div className={cls['headTitle']}>Locations</div>
+            <div className={cls['headSub']}>
+              {locations.length} location{locations.length === 1 ? '' : 's'} · {assets.length} asset
+              {assets.length === 1 ? '' : 's'}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className={cls['grid']}>
         {locations.map((loc) => {

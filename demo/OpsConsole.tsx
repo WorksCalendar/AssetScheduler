@@ -9,7 +9,7 @@
  */
 import { useMemo, useRef, useState } from 'react';
 import { Boxes, CalendarDays, ClipboardList, Map as MapIcon, MapPin } from 'lucide-react';
-import { WorksCalendar, OpsShell, LocationsView } from '../src/index';
+import { WorksCalendar, OpsShell, OpsViewHeader, LocationsView } from '../src/index';
 import type {
   CalendarApi,
   WorksCalendarProps,
@@ -63,6 +63,17 @@ export function OpsConsole({
     }
   };
 
+  const subHeader =
+    activeTab === 'locations' ? (
+      <OpsViewHeader
+        icon={<MapPin size={18} />}
+        title="Locations"
+        subtitle={`${locations.length} location${locations.length === 1 ? '' : 's'} · ${
+          locationAssets.length
+        } asset${locationAssets.length === 1 ? '' : 's'}`}
+      />
+    ) : undefined;
+
   return (
     <OpsShell
       banner={banner}
@@ -72,6 +83,7 @@ export function OpsConsole({
       mode={mode}
       onToggleMode={() => setMode((m) => (m === 'dark' ? 'light' : 'dark'))}
       onTabChange={handleTabChange}
+      {...(subHeader ? { subHeader } : {})}
     >
       <div style={{ position: 'relative', height: '100%', width: '100%' }}>
         <WorksCalendar
@@ -89,6 +101,7 @@ export function OpsConsole({
             <LocationsView
               locations={locations}
               assets={locationAssets}
+              showHeader={false}
               onAssetClick={(assetId) => {
                 // Jump to the map and let the host highlight the asset.
                 handleTabChange('dispatch');

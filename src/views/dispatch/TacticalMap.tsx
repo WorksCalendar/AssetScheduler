@@ -87,7 +87,7 @@ export function TacticalMap({
   }, [assets]);
 
   return (
-    <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full h-full" style={{ background: '#e8dcc8' }}>
+    <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full h-full" style={{ background: 'var(--tac-bg)' }}>
       <defs>
         <filter id="dispatch-ink">
           <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves={2} result="n" />
@@ -119,40 +119,33 @@ export function TacticalMap({
         </filter>
       </defs>
 
-      <rect width={VW} height={VH} fill="#e8dcc8" />
+      <rect width={VW} height={VH} fill="var(--tac-bg)" />
 
       {/* OSM raster tile basemap — each tile is placed by projecting its
-          NW/SE corners through the current layer's bounds. Tiles render
-          in their natural OSM colors so labels stay legible; a translucent
-          warm overlay below the data layer ties them to the dispatch
-          parchment palette without softening the map text. */}
+          NW/SE corners through the current layer's bounds. Tiles render in
+          their natural OSM colors (no tint overlay). */}
       {tiles.length > 0 && (
-        <>
-          <g>
-            {tiles.map((t) => {
-              const [x1, y1] = proj(t.nw.lat, t.nw.lng);
-              const [x2, y2] = proj(t.se.lat, t.se.lng);
-              const w = x2 - x1;
-              const h = y2 - y1;
-              return (
-                <image
-                  key={`${t.z}-${t.x}-${t.y}`}
-                  href={t.url}
-                  x={x1}
-                  y={y1}
-                  width={w}
-                  height={h}
-                  preserveAspectRatio="none"
-                  crossOrigin="anonymous"
-                  style={{ imageRendering: 'auto' }}
-                />
-              );
-            })}
-          </g>
-          {/* Faint parchment wash — pulls the OSM palette toward the
-              dispatch theme without blurring the underlying labels. */}
-          <rect width={VW} height={VH} fill="#e8dcc8" opacity={0.22} />
-        </>
+        <g>
+          {tiles.map((t) => {
+            const [x1, y1] = proj(t.nw.lat, t.nw.lng);
+            const [x2, y2] = proj(t.se.lat, t.se.lng);
+            const w = x2 - x1;
+            const h = y2 - y1;
+            return (
+              <image
+                key={`${t.z}-${t.x}-${t.y}`}
+                href={t.url}
+                x={x1}
+                y={y1}
+                width={w}
+                height={h}
+                preserveAspectRatio="none"
+                crossOrigin="anonymous"
+                style={{ imageRendering: 'auto' }}
+              />
+            );
+          })}
+        </g>
       )}
 
       {/* Layer-name watermark for the non-region zoom presets, since the
@@ -164,7 +157,7 @@ export function TacticalMap({
           textAnchor="middle"
           fontFamily="serif"
           fontSize={12}
-          fill="#5a3e2b"
+          fill="var(--tac-ink-soft)"
           letterSpacing={2}
           opacity={0.55}
         >
@@ -247,7 +240,7 @@ export function TacticalMap({
                   y1={y1}
                   x2={x2}
                   y2={y2}
-                  stroke="#3d2b1f"
+                  stroke="var(--tac-ink)"
                   strokeWidth={0.8}
                   strokeDasharray="1,4"
                   opacity={0.25}
@@ -273,12 +266,12 @@ export function TacticalMap({
         const [x, y] = proj(fac.lat, fac.lng);
         return (
           <g key={fac.code} transform={`translate(${x},${y})`}>
-            <circle r={8} fill="#fff" stroke="#3d2b1f" strokeWidth={1.5} filter="url(#dispatch-ink)" />
-            <text y={-12} textAnchor="middle" fontFamily="serif" fontSize={12} fill="#3d2b1f" fontWeight="bold">
+            <circle r={8} fill="var(--tac-panel)" stroke="var(--tac-ink)" strokeWidth={1.5} filter="url(#dispatch-ink)" />
+            <text y={-12} textAnchor="middle" fontFamily="serif" fontSize={12} fill="var(--tac-ink)" fontWeight="bold">
               {fac.code}
             </text>
             {fac.capacity != null && (
-              <text y={20} textAnchor="middle" fontFamily="sans-serif" fontSize={8} fill="#5a3e2b">
+              <text y={20} textAnchor="middle" fontFamily="sans-serif" fontSize={8} fill="var(--tac-ink-soft)">
                 {fac.capacity} docks
               </text>
             )}
@@ -316,7 +309,7 @@ export function TacticalMap({
                 on top of each other and the map turns into typographic
                 confetti. Hover state surfaces the id via the <title>. */}
             {isSelected && (
-              <text y={-16} textAnchor="middle" fontFamily="sans-serif" fontSize={11} fill="#3d2b1f" fontWeight="bold">
+              <text y={-16} textAnchor="middle" fontFamily="sans-serif" fontSize={11} fill="var(--tac-ink)" fontWeight="bold">
                 {asset.id}
               </text>
             )}

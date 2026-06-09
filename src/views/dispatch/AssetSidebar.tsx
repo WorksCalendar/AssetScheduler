@@ -82,12 +82,12 @@ export function AssetSidebar({
   const facilitiesByCode = new Map(facilities.map((f) => [f.code, f]));
 
   return (
-    <div className="h-full flex flex-col border-r-2 border-[#3d2b1f]/20 bg-[#f5e6c8]">
-      <div className="px-3 py-2 border-b border-[#3d2b1f]/20">
-        <h2 className="font-serif text-sm font-bold text-[#3d2b1f] tracking-wider uppercase">
+    <div className="h-full flex flex-col border-r-2 border-[color:var(--tac-line)] bg-[var(--tac-panel)]">
+      <div className="px-3 py-2 border-b border-[color:var(--tac-line)]">
+        <h2 className="font-serif text-sm font-bold text-[var(--tac-ink)] tracking-wider uppercase">
           Fleet Status
         </h2>
-        <div className="flex gap-2 mt-1 text-[10px] text-[#5a3e2b]">
+        <div className="flex gap-2 mt-1 text-[10px] text-[var(--tac-ink-soft)]">
           <span>{assets.length} active</span>
           <span className="text-[#c0392b] font-bold">{conflictedAssets.size} conflicted</span>
           {hosByAsset && (() => {
@@ -117,10 +117,10 @@ export function AssetSidebar({
                 type="button"
                 onClick={() => onSelectAsset(isSelected ? '' : asset.id)}
                 className={[
-                  'w-full text-left px-3 py-2 border-b border-[#3d2b1f]/10 transition-all',
+                  'w-full text-left px-3 py-2 border-b border-[color:var(--tac-line-soft)] transition-all',
                   isSelected
-                    ? 'bg-[#3d2b1f] text-white shadow-inner'
-                    : 'hover:bg-[#3d2b1f]/5',
+                    ? 'bg-[var(--tac-sel)] text-white shadow-inner'
+                    : 'hover:bg-[var(--tac-hover)]',
                 ].join(' ')}
               >
                 <div className="flex items-center gap-2">
@@ -130,7 +130,7 @@ export function AssetSidebar({
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1 flex-wrap">
-                      <span className={`text-[11px] font-bold truncate ${isSelected ? 'text-white' : 'text-[#3d2b1f]'}`}>
+                      <span className={`text-[11px] font-bold truncate ${isSelected ? 'text-white' : 'text-[var(--tac-ink)]'}`}>
                         {asset.id}
                       </span>
                       {hasConflict && firstConflict && (
@@ -150,7 +150,7 @@ export function AssetSidebar({
                         </span>
                       )}
                     </div>
-                    <div className={`text-[10px] truncate ${isSelected ? 'text-white/80' : 'text-[#5a3e2b]'}`}>
+                    <div className={`text-[10px] truncate ${isSelected ? 'text-white/80' : 'text-[var(--tac-ink-soft)]'}`}>
                       {asset.name}
                     </div>
                     <div className={`text-[9px] mt-0.5 ${isSelected ? 'text-white/60' : 'text-[#7a6e5b]'}`}>

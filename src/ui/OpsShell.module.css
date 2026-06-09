@@ -152,6 +152,37 @@
   opacity: 0.8;
 }
 
+/* ── Sub-header (active view title bar) ──────────────────────────────── */
+.subbar {
+  flex: 0 0 auto;
+  background: var(--ops-surface);
+  border-bottom: 1px solid var(--ops-border);
+  padding: 0 16px;
+}
+
+.viewHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 54px;
+  padding: 8px 0;
+}
+.viewHeadIcon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--ops-accent) 16%, transparent);
+  color: var(--ops-accent);
+}
+.viewHeadText { min-width: 0; line-height: 1.2; }
+.viewHeadTitle { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+.viewHeadSub { font-size: 12px; color: var(--ops-text-muted); }
+.viewHeadActions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
 /* ── Body ───────────────────────────────────────────────────────────── */
 .body {
   flex: 1 1 auto;
