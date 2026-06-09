@@ -1,0 +1,225 @@
+/* OpsShell — ops-console app shell (banner + bottom tab bar + light/dark).
+   Self-contained token set; intentionally does NOT depend on the legacy
+   theme-family system. Light/dark is driven by [data-ops-theme] on .root. */
+
+.root {
+  /* ── light (default) ── */
+  --ops-bg:          #f4f5f7;
+  --ops-surface:     #ffffff;
+  --ops-surface-2:   #f1f3f5;
+  --ops-border:      #e3e6ea;
+  --ops-text:        #16191d;
+  --ops-text-muted:  #5b636c;
+  --ops-text-faint:  #8b939c;
+  --ops-accent:      #2563eb;
+  --ops-shadow:      0 1px 3px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
+  --ops-tabbar-bg:   rgba(255, 255, 255, 0.92);
+
+  --ops-ok:    #16a34a;
+  --ops-warn:  #d97706;
+  --ops-bad:   #dc2626;
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--ops-bg);
+  color: var(--ops-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.root[data-ops-theme='dark'] {
+  --ops-bg:          #0b0e12;
+  --ops-surface:     #141a21;
+  --ops-surface-2:   #1b232c;
+  --ops-border:      #28323d;
+  --ops-text:        #eef2f6;
+  --ops-text-muted:  #98a3ae;
+  --ops-text-faint:  #6b7682;
+  --ops-accent:      #60a5fa;
+  --ops-shadow:      0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(0, 0, 0, 0.45);
+  --ops-tabbar-bg:   rgba(15, 20, 26, 0.92);
+}
+
+/* ── Banner ─────────────────────────────────────────────────────────── */
+.banner {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  height: 56px;
+  color: #fff;
+  /* background set inline from the banner color/gradient prop */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 3px;
+  flex: 0 0 auto;
+}
+
+.logoFallback {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.95);
+  color: #16191d;
+  font-weight: 800;
+  font-size: 15px;
+  flex: 0 0 auto;
+}
+
+.titleBlock { line-height: 1.15; min-width: 0; }
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.subtitle {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.78;
+}
+
+.spacer { flex: 1 1 auto; }
+
+.modeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.modeBtn:hover { background: rgba(255, 255, 255, 0.24); }
+
+/* persona chip */
+.persona {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 5px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  flex: 0 0 auto;
+}
+.avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  color: #16191d;
+  font-size: 10px;
+  font-weight: 700;
+}
+.personaText { line-height: 1.15; }
+.personaName { font-size: 12px; font-weight: 600; }
+.personaRole {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+/* ── Body ───────────────────────────────────────────────────────────── */
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  overflow: hidden;
+}
+.body > * { flex: 1 1 auto; min-width: 0; min-height: 0; }
+
+/* ── Bottom tab bar ─────────────────────────────────────────────────── */
+.tabbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: stretch;
+  background: var(--ops-tabbar-bg);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--ops-border);
+  padding: 0 max(8px, env(safe-area-inset-left)) env(safe-area-inset-bottom);
+}
+
+.tab {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 4px 9px;
+  border: 0;
+  background: transparent;
+  color: var(--ops-text-faint);
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.12s;
+}
+.tab:hover { color: var(--ops-text-muted); }
+.tab[data-active='true'] { color: var(--ops-accent); }
+.tab[data-active='true']::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26px;
+  height: 2.5px;
+  border-radius: 0 0 3px 3px;
+  background: var(--ops-accent);
+}
+.tabIcon { display: flex; }
+.tabLabel { white-space: nowrap; }
+
+.tabBadge {
+  position: absolute;
+  top: 5px;
+  right: calc(50% - 18px);
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--ops-bad);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

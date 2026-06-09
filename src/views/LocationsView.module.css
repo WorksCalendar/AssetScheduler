@@ -1,0 +1,82 @@
+.root {
+  height: 100%;
+  overflow: auto;
+  padding: 20px;
+  background: var(--ops-bg, #f4f5f7);
+  color: var(--ops-text, #16191d);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.headIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--ops-accent, #2563eb) 16%, transparent);
+  color: var(--ops-accent, #2563eb);
+}
+.headTitle { font-size: 16px; font-weight: 700; }
+.headSub { font-size: 12px; color: var(--ops-text-muted, #5b636c); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  border: 1px solid var(--ops-border, #e3e6ea);
+  border-radius: 12px;
+  background: var(--ops-surface, #fff);
+  box-shadow: var(--ops-shadow, 0 1px 3px rgba(0, 0, 0, 0.08));
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardHead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.cardName { font-size: 14px; font-weight: 700; }
+.cardCode {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ops-text-faint, #8b939c);
+}
+.cardRegion {
+  font-size: 11px;
+  color: var(--ops-text-muted, #5b636c);
+}
+
+.assetList { display: flex; flex-direction: column; gap: 6px; }
+.assetRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--ops-surface-2, #f1f3f5);
+  font-size: 12px;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--ops-accent, #2563eb); }
+.assetLabel { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assetMeta { font-size: 10px; color: var(--ops-text-faint, #8b939c); }
+
+.empty {
+  padding: 8px;
+  font-size: 12px;
+  color: var(--ops-text-faint, #8b939c);
+}
+
+.count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ops-text-muted, #5b636c);
+}

@@ -9,11 +9,10 @@
  */
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { WorksCalendar } from '../src/index';
 import type { WorksCalendarEvent } from '../src/index';
+import { OpsConsole } from './OpsConsole';
 import { TRUCKS, TRUCK_ROUTES, DRIVERS, BASES, REGIONS } from './truckDemoData';
 import { getWaypoints } from './highways';
-import '../src/styles/soft.css';
 
 const CALENDAR_ID = 'dispatch-demo-v3';
 
@@ -247,32 +246,57 @@ try {
   // tabs that read bases/regions will just render empty.
 }
 
+// ── Locations tab data ───────────────────────────────────────────────────────
+const REGION_NAME = new Map(REGIONS.map((r) => [r.id, r.name]));
+const DEMO_LOCATIONS = BASES.map((b) => ({
+  id: b.id,
+  name: b.name,
+  code: b.id,
+  region: REGION_NAME.get(b.regionId) ?? '',
+}));
+const DEMO_LOCATION_ASSETS = ASSETS.map((a) => ({
+  id: a.id,
+  label: a.label,
+  locationId: String(a.meta.hub ?? a.group ?? ''),
+  color: a.meta.color,
+  meta: String(a.meta.type ?? ''),
+}));
+
 function DemoApp() {
   return (
     <div style={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
-      <WorksCalendar
-        calendarId={CALENDAR_ID}
-        initialView="dispatch"
-        theme="soft"
-        events={FLEET_EVENTS}
-        assets={ASSETS}
-        employees={DRIVERS.map((d) => ({
-          id: d.id,
-          name: d.name,
-          base: d.base,
-          role: d.role,
-          color: d.color,
-        }))}
-        // Demo-side highway corridor lookup. The dispatch view falls
-        // back to a straight-line / arch breadcrumb when this returns
-        // null, so it's safe to leave undefined for hosts that don't
-        // ship their own routing data.
-        getRouteWaypoints={(from, to) => {
-          const wps = getWaypoints(from, to);
-          return wps ? wps.map((w) => ({ lat: w.lat, lng: w.lng })) : null;
+      <OpsConsole
+        banner={{
+          title: 'AssetScheduler',
+          subtitle: 'Ops Console',
+          logoText: 'AS',
         }}
-        showCalendarLegend={false}
-        showOfflineIndicator={false}
+        persona={{ name: 'Billy Ortega', role: 'Director' }}
+        locations={DEMO_LOCATIONS}
+        locationAssets={DEMO_LOCATION_ASSETS}
+        initialMode="dark"
+        calendar={{
+          calendarId: CALENDAR_ID,
+          events: FLEET_EVENTS,
+          assets: ASSETS,
+          employees: DRIVERS.map((d) => ({
+            id: d.id,
+            name: d.name,
+            base: d.base,
+            role: d.role,
+            color: d.color,
+          })),
+          // Demo-side highway corridor lookup. The dispatch view falls
+          // back to a straight-line / arch breadcrumb when this returns
+          // null, so it's safe to leave undefined for hosts that don't
+          // ship their own routing data.
+          getRouteWaypoints: (from, to) => {
+            const wps = getWaypoints(from, to);
+            return wps ? wps.map((w) => ({ lat: w.lat, lng: w.lng })) : null;
+          },
+          showCalendarLegend: false,
+          showOfflineIndicator: false,
+        }}
       />
     </div>
   );
