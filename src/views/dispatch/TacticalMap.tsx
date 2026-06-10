@@ -43,7 +43,13 @@ interface Props {
   /** Geographic route overlay (e.g. committed assignment legs) drawn through
    *  the MapAdapter abstraction so the same data renders on any host map. */
   readonly dispatchRoutes?: readonly RouteFeature[];
+  /** When no asset is selected, draw a fading "comet tail" of each asset's
+   *  travel over the last this-many hours instead of the full breadcrumb
+   *  spaghetti. Default 3. */
+  readonly tailHours?: number;
 }
+
+const TAIL_SAMPLES = 14;
 
 const ROUTE_STATUS_COLOR: Record<RouteStatus, string> = {
   green: '#16a34a',
@@ -68,6 +74,7 @@ export function TacticalMap({
   tileUrl,
   getRouteWaypoints,
   dispatchRoutes,
+  tailHours = 3,
 }: Props) {
   const bounds = DEFAULT_LAYER_BOUNDS[layer];
   const proj = (lat: number, lng: number): [number, number] =>
@@ -115,6 +122,35 @@ export function TacticalMap({
     for (const a of assets) m.set(a.id, a.color);
     return m;
   }, [assets]);
+
+  // Comet tails (only when nothing is selected): sample each asset's position
+  // over the last `tailHours` and keep the distinct points, head = current
+  // position at the slider time. Geographic only — projection happens in render
+  // so it re-runs on layer change.
+  const assetTails = useMemo(() => {
+    if (selectedAsset) return [];
+    const endMs = selectedDate.getTime();
+    const startMs = endMs - tailHours * 3_600_000;
+    const out: { id: string; color: string; pts: { lat: number; lng: number }[] }[] = [];
+    for (const asset of assets) {
+      const stops = stopsByAsset.get(asset.id);
+      if (!stops) continue;
+      const pts: { lat: number; lng: number }[] = [];
+      for (let k = 0; k <= TAIL_SAMPLES; k++) {
+        const p = positionAt(stops, new Date(startMs + ((endMs - startMs) * k) / TAIL_SAMPLES));
+        if (!p) continue;
+        const last = pts[pts.length - 1];
+        // Drop consecutive ~identical samples so a parked asset draws nothing.
+        if (!last || Math.abs(last.lat - p.lat) > 1e-6 || Math.abs(last.lng - p.lng) > 1e-6) {
+          pts.push({ lat: p.lat, lng: p.lng });
+        }
+      }
+      if (pts.length >= 2) {
+        out.push({ id: asset.id, color: assetColorById.get(asset.id) ?? '#3d2b1f', pts });
+      }
+    }
+    return out;
+  }, [assets, stopsByAsset, selectedDate, selectedAsset, tailHours, assetColorById]);
 
   return (
     <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full h-full" style={{ background: 'var(--tac-bg)' }}>
@@ -210,6 +246,9 @@ export function TacticalMap({
           hundreds of paths with multi-thousand-pixel coordinates +
           stops iOS Safari OOMing on the filter region. */}
       {assets.flatMap((asset) => {
+        // No selection → the comet tails carry recent progress instead of the
+        // full breadcrumb network, keeping the map calm.
+        if (!selectedAsset) return [];
         const segs = segmentsByAsset.get(asset.id) ?? [];
         const isSelected = asset.id === selectedAsset;
         const baseOpacity = selectedAsset ? (isSelected ? 1 : 0.015) : 0.35;
@@ -305,6 +344,41 @@ export function TacticalMap({
                 {fac.capacity} docks
               </text>
             )}
+          </g>
+        );
+      })}
+
+      {/* Comet tails — recent travel behind each asset when nothing is
+          selected. Tapers + fades from the head (current position) back, so
+          direction and progress read at a glance without route spaghetti. */}
+      {assetTails.map((tail) => {
+        const pp = tail.pts.map((p) => proj(p.lat, p.lng));
+        const xs = pp.map((p) => p[0]);
+        const ys = pp.map((p) => p[1]);
+        const M = 200;
+        if (Math.max(...xs) < -M || Math.min(...xs) > VW + M || Math.max(...ys) < -M || Math.min(...ys) > VH + M) {
+          return null;
+        }
+        const n = pp.length - 1;
+        return (
+          <g key={`tail-${tail.id}`}>
+            {pp.slice(1).map(([x2, y2], i) => {
+              const [x1, y1] = pp[i]!;
+              const f = (i + 1) / n; // 0 (tail) → 1 (head)
+              return (
+                <line
+                  key={i}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke={tail.color}
+                  strokeWidth={0.6 + 2.4 * f}
+                  strokeOpacity={0.1 + 0.65 * f}
+                  strokeLinecap="round"
+                />
+              );
+            })}
           </g>
         );
       })}
