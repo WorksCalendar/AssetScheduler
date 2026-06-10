@@ -116,8 +116,6 @@ export type WorksCalendarConfig = {
   approvals?: UnknownRecord;
   /** Owner-configurable request-form schema. */
   requestForm?: { fields?: UnknownRecord[]; [key: string]: unknown };
-  /** Custom theme token overrides. */
-  customTheme?: UnknownRecord;
   [key: string]: unknown;
 };
 

@@ -69,14 +69,14 @@ describe('ConfigPanel — sidebar search', () => {
 
   it('clicking a result switches to that tab and clears the query', () => {
     mount();
-    fireEvent.change(screen.getByLabelText('Search settings'), { target: { value: 'theme' } });
+    fireEvent.change(screen.getByLabelText('Search settings'), { target: { value: 'colors' } });
     // Pick the first result and click it.
-    fireEvent.click(screen.getAllByRole('tab').find(el => el.textContent?.includes('Theme'))!);
+    fireEvent.click(screen.getAllByRole('tab').find(el => el.textContent?.includes('Event Colors'))!);
     // Query should be cleared (section list returns).
     expect(screen.getByRole('button', { name: 'Appearance' })).toBeInTheDocument();
-    // Theme tab should be active in the regular sidebar.
-    const themeTab = screen.getByRole('tab', { name: 'Theme' });
-    expect(themeTab).toHaveAttribute('aria-selected', 'true');
+    // Event Colors tab should be active in the regular sidebar.
+    const colorsTab = screen.getByRole('tab', { name: 'Event Colors' });
+    expect(colorsTab).toHaveAttribute('aria-selected', 'true');
   });
 });
 
@@ -106,9 +106,10 @@ describe('ConfigPanel — Overview tab', () => {
 
   it('clicking an Overview card jumps to that tab', () => {
     mount({ initialTab: 'overview' });
-    // The "Theme" card is a button inside Appearance.
+    // The "Theme" card is a button inside Appearance; it jumps to the Setup
+    // tab, which now hosts the light/dark picker.
     fireEvent.click(screen.getByRole('button', { name: /Theme.*Light \/ dark/i }));
-    expect(screen.getByRole('tab', { name: 'Theme' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Setup' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('jumping from Overview auto-expands the destination section', () => {
@@ -133,10 +134,10 @@ describe('ConfigPanel — section taxonomy', () => {
     }
   });
 
-  it('Appearance contains Theme and Event Colors', () => {
+  it('Appearance contains Setup and Event Colors', () => {
     mount();
     // Appearance is open by default; its tabs should be present.
-    expect(screen.getByRole('tab', { name: 'Theme' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Setup' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Event Colors' })).toBeInTheDocument();
   });
 
