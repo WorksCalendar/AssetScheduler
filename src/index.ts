@@ -34,6 +34,22 @@ export type { OpsAlertBarProps, OpsAlertItem } from './ui/OpsAlertBar';
 export { AssignmentsPanel } from './views/AssignmentsPanel';
 export type { AssignmentsPanelProps, AssignmentRow } from './views/AssignmentsPanel';
 
+// ── Map abstraction (route lines on any host map engine) ─────────────────────
+export type {
+  MapAdapter, LngLat, ScreenPoint, RouteStatus, RouteFeature,
+} from './map/MapAdapter';
+export {
+  interpolateGreatCircle, densifyLeg, densifyPath,
+  projectRoutes, toPolylinePoints,
+} from './map';
+export type { DensifyOptions, ProjectedRoute, ProjectRoutesOptions } from './map';
+export {
+  createLeafletAdapter, createGoogleAdapter, createBingAdapter, createAzureMapsAdapter,
+} from './map';
+export type {
+  LeafletMapLike, GoogleMapLike, GoogleOverlayLike, BingMapLike, BingEventsLike, AzureMapLike,
+} from './map';
+
 // ── Resource allocator (Allocate tab) ────────────────────────────────────────
 export { AllocateView } from './views/AllocateView';
 export type { AllocateViewProps } from './views/AllocateView';
