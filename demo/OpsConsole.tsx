@@ -9,7 +9,16 @@
  */
 import { useMemo, useRef, useState } from 'react';
 import { Boxes, CalendarDays, ClipboardList, Map as MapIcon, MapPin } from 'lucide-react';
-import { WorksCalendar, OpsShell, OpsViewHeader, LocationsView, AllocateView } from '../src/index';
+import {
+  WorksCalendar,
+  OpsShell,
+  OpsViewHeader,
+  OpsAlertBar,
+  LocationsView,
+  AllocateView,
+  AssignmentsPanel,
+  evaluateCandidate,
+} from '../src/index';
 import type {
   CalendarApi,
   WorksCalendarProps,
@@ -17,10 +26,12 @@ import type {
   OpsPersona,
   OpsTab,
   OpsThemeMode,
+  OpsAlertItem,
   LocationItem,
   LocationAsset,
   ResourceCandidate,
   DispatchRequirements,
+  AssignmentRow,
   WorksCalendarEvent,
 } from '../src/index';
 
@@ -123,6 +134,98 @@ export function OpsConsole({
     [calendar.events, assignmentEvents],
   );
 
+  // Flatten assignments and grade each so the banner + map HUD can read off a
+  // single source of truth.
+  const assignmentRows = useMemo(() => {
+    const dispatchById = new Map(dispatches.map((d) => [d.id, d]));
+    const resourceById = new Map(resources.map((r) => [r.id, r]));
+    const rows: {
+      key: string;
+      dispatch: DispatchRequirements;
+      resource: ResourceCandidate;
+      fleetId: string;
+      status: ReturnType<typeof evaluateCandidate>['status'];
+      reasons: string;
+    }[] = [];
+    for (const [dispatchId, ids] of Object.entries(assignments)) {
+      const d = dispatchById.get(dispatchId);
+      if (!d) continue;
+      for (const candidateId of ids) {
+        const r = resourceById.get(candidateId);
+        if (!r) continue;
+        const e = evaluateCandidate(d, r);
+        rows.push({
+          key: `${dispatchId}::${candidateId}`,
+          dispatch: d,
+          resource: r,
+          fleetId: candidateId.startsWith('drv-') ? candidateId.slice(4) : candidateId,
+          status: e.status,
+          reasons: e.checks.filter((c) => c.status !== 'green').map((c) => c.detail).join('; '),
+        });
+      }
+    }
+    return rows;
+  }, [assignments, dispatches, resources]);
+
+  // Conflicts (red) + warnings (amber) for the notification banner: failed
+  // requirement checks, plus double-booking the same resource across
+  // overlapping dispatches.
+  const issues = useMemo<OpsAlertItem[]>(() => {
+    const out: OpsAlertItem[] = [];
+    for (const row of assignmentRows) {
+      if (row.status === 'green') continue;
+      out.push({
+        id: `req-${row.key}`,
+        severity: row.status === 'red' ? 'red' : 'amber',
+        title: `${row.resource.label} → ${row.dispatch.label}`,
+        detail: row.reasons,
+        actionLabel: 'Review',
+        onAction: () => handleTabChange('allocate'),
+      });
+    }
+    const byFleet = new Map<string, typeof assignmentRows>();
+    for (const row of assignmentRows) {
+      const list = byFleet.get(row.fleetId) ?? [];
+      list.push(row);
+      byFleet.set(row.fleetId, list);
+    }
+    for (const list of byFleet.values()) {
+      for (let i = 0; i < list.length; i++) {
+        for (let j = i + 1; j < list.length; j++) {
+          const a = list[i]!;
+          const b = list[j]!;
+          const as = new Date(a.dispatch.start).getTime();
+          const ae = new Date(a.dispatch.end).getTime();
+          const bs = new Date(b.dispatch.start).getTime();
+          const be = new Date(b.dispatch.end).getTime();
+          if (as < be && bs < ae) {
+            out.push({
+              id: `dbl-${a.key}-${b.key}`,
+              severity: 'red',
+              title: `${a.resource.label} double-booked`,
+              detail: `${a.dispatch.label} overlaps ${b.dispatch.label}`,
+              actionLabel: 'Review',
+              onAction: () => handleTabChange('allocate'),
+            });
+          }
+        }
+      }
+    }
+    return out;
+  }, [assignmentRows]);
+
+  const assignmentPanelRows = useMemo<AssignmentRow[]>(
+    () => assignmentRows.map((row) => ({
+      id: row.key,
+      title: row.resource.label,
+      subtitle: row.dispatch.label,
+      status: row.status,
+    })),
+    [assignmentRows],
+  );
+
+  const notice = issues.length > 0 ? <OpsAlertBar items={issues} /> : undefined;
+
   const subHeader = useMemo(() => {
     if (activeTab === 'locations') {
       return (
@@ -158,6 +261,7 @@ export function OpsConsole({
       mode={mode}
       onToggleMode={() => setMode((m) => (m === 'dark' ? 'light' : 'dark'))}
       onTabChange={handleTabChange}
+      {...(notice ? { notice } : {})}
       {...(subHeader ? { subHeader } : {})}
     >
       <div style={{ position: 'relative', height: '100%', width: '100%' }}>
@@ -200,6 +304,18 @@ export function OpsConsole({
               assignments={assignments}
               onToggleAssign={handleToggleAssign}
             />
+          </div>
+        )}
+        {activeTab === 'dispatch' && assignmentPanelRows.length > 0 && (
+          // Floating HUD over the map; the wrapper is click-through so the map
+          // stays interactive, only the card itself takes pointer events.
+          <div style={{ position: 'absolute', inset: 0, zIndex: 4, pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', right: 16, bottom: 24, pointerEvents: 'auto' }}>
+              <AssignmentsPanel
+                rows={assignmentPanelRows}
+                onRowClick={() => handleTabChange('allocate')}
+              />
+            </div>
           </div>
         )}
       </div>

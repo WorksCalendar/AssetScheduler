@@ -29,6 +29,10 @@ export { LocationsView } from './views/LocationsView';
 export type {
   LocationsViewProps, LocationItem, LocationAsset,
 } from './views/LocationsView';
+export { OpsAlertBar } from './ui/OpsAlertBar';
+export type { OpsAlertBarProps, OpsAlertItem } from './ui/OpsAlertBar';
+export { AssignmentsPanel } from './views/AssignmentsPanel';
+export type { AssignmentsPanelProps, AssignmentRow } from './views/AssignmentsPanel';
 
 // ── Resource allocator (Allocate tab) ────────────────────────────────────────
 export { AllocateView } from './views/AllocateView';

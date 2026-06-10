@@ -112,9 +112,10 @@ function CandidateCard({
               type="button"
               className={cls['assignBtn']}
               data-assigned={assigned || undefined}
+              data-warn={!assigned && evaluation.status === 'red' ? true : undefined}
               onClick={onAssign}
             >
-              {assigned ? 'Assigned ✓' : 'Assign'}
+              {assigned ? 'Assigned ✓' : evaluation.status === 'red' ? 'Assign anyway' : 'Assign'}
             </button>
           )}
         </div>

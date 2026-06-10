@@ -57,6 +57,11 @@ export interface OpsShellProps {
   mode: OpsThemeMode;
   onToggleMode?: () => void;
   /**
+   * Persistent notification strip rendered directly under the banner, above
+   * the sub-header — so it shows on every tab. Pair with {@link OpsAlertBar}.
+   */
+  notice?: ReactNode;
+  /**
    * Optional bar rendered between the banner and the body — the home for an
    * active view's title/icon so views without their own header (e.g.
    * Locations) don't have to crowd their content with one. Pair with
@@ -106,6 +111,7 @@ export function OpsShell({
   onTabChange,
   mode,
   onToggleMode,
+  notice,
   subHeader,
   children,
 }: OpsShellProps) {
@@ -153,6 +159,8 @@ export function OpsShell({
           </div>
         )}
       </header>
+
+      {notice}
 
       {subHeader && <div className={cls['subbar']}>{subHeader}</div>}
 
