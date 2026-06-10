@@ -726,7 +726,7 @@ function SetupTab({
                     className={styles['themeFamilyPill']}
                     style={{
                       background: (selectedMeta.family === family.id ? selectedMeta : lightMeta).preview.accent,
-                      borderRadius: family.id === 'grid' ? '0' : family.id === 'industrial' ? '2px' : family.id === 'neon' || family.id === 'corporate' ? '10px' : '4px',
+                      borderRadius: '4px',
                     }}
                   />
                   <span
@@ -734,7 +734,7 @@ function SetupTab({
                     style={{
                       background: (selectedMeta.family === family.id ? selectedMeta : lightMeta).preview.text,
                       opacity: 0.35,
-                      borderRadius: family.id === 'grid' ? '0' : family.id === 'industrial' ? '2px' : family.id === 'neon' || family.id === 'corporate' ? '10px' : '4px',
+                      borderRadius: '4px',
                     }}
                   />
                 </div>

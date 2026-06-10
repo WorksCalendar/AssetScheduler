@@ -23,8 +23,8 @@ import { THEMES, THEME_META, type ThemeId } from '../styles/themes';
 afterEach(() => cleanup());
 
 describe('WorksCalendar theme sweep', () => {
-  it('exposes 12 themes (6 families × light/dark)', () => {
-    expect(THEMES).toHaveLength(12);
+  it('exposes 2 themes (light + dark)', () => {
+    expect(THEMES).toHaveLength(2);
   });
 
   for (const themeId of THEMES) {
