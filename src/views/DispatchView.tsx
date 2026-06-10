@@ -48,6 +48,7 @@ interface DispatchViewLooseProps {
    *  the dispatch map draws a polyline through those points; otherwise the
    *  arch / straight-line fallback is used. */
   readonly getRouteWaypoints?: (fromCode: string, toCode: string) => readonly { lat: number; lng: number }[] | null;
+  readonly dispatchRoutes?: readonly import('../map').RouteFeature[];
   // Legacy props (employees, bases, missions, evaluateForMission, onAssign, …)
   // are accepted to keep CalendarViewGrid's existing wiring stable but ignored
   // by the new board. The dispatch view derives everything it renders from
@@ -67,6 +68,7 @@ export default function DispatchView(props: DispatchViewLooseProps) {
       {...(props.onCurrentDateChange ? { onCurrentDateChange: props.onCurrentDateChange } : {})}
       {...(props.viewSwitcher ? { viewSwitcher: props.viewSwitcher } : {})}
       {...(props.getRouteWaypoints ? { getRouteWaypoints: props.getRouteWaypoints } : {})}
+      {...(props.dispatchRoutes ? { dispatchRoutes: props.dispatchRoutes } : {})}
     />
   );
 }

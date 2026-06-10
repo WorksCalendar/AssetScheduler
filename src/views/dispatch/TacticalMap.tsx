@@ -10,6 +10,8 @@ import { useMemo } from 'react';
 import { project, DEFAULT_LAYER_BOUNDS } from './projection';
 import { positionAt } from './deriveData';
 import { DEFAULT_LAYER_ZOOM, tilesForBounds } from './tileLayer';
+import { projectRoutes, toPolylinePoints } from '../../map';
+import type { MapAdapter, RouteFeature, RouteStatus } from '../../map';
 import type {
   DispatchAsset,
   DispatchConflict,
@@ -38,7 +40,16 @@ interface Props {
    *  the leg passes through. When null/missing, the leg falls back to a
    *  3D quadratic-arch breadcrumb between the two endpoint stops. */
   readonly getRouteWaypoints?: (fromCode: string, toCode: string) => readonly { lat: number; lng: number }[] | null;
+  /** Geographic route overlay (e.g. committed assignment legs) drawn through
+   *  the MapAdapter abstraction so the same data renders on any host map. */
+  readonly dispatchRoutes?: readonly RouteFeature[];
 }
+
+const ROUTE_STATUS_COLOR: Record<RouteStatus, string> = {
+  green: '#16a34a',
+  amber: '#d97706',
+  red: '#dc2626',
+};
 
 const VW = 1000;
 const VH = 800;
@@ -56,10 +67,29 @@ export function TacticalMap({
   showTiles = true,
   tileUrl,
   getRouteWaypoints,
+  dispatchRoutes,
 }: Props) {
   const bounds = DEFAULT_LAYER_BOUNDS[layer];
   const proj = (lat: number, lng: number): [number, number] =>
     project(bounds, lat, lng, VW, VH);
+
+  // Wrap this SVG's fixed-zoom projection as a MapAdapter, then project the
+  // geographic route overlay to viewBox space. Changing the layer (the SVG's
+  // "zoom") re-runs this via the memo dependency — the BYO-map equivalent of
+  // an onViewChange reproject.
+  const projectedRoutes = useMemo(() => {
+    if (!dispatchRoutes || dispatchRoutes.length === 0) return [];
+    const adapter: MapAdapter = {
+      project: ({ lat, lng }) => {
+        const [x, y] = proj(lat, lng);
+        return { x, y };
+      },
+      getZoom: () => DEFAULT_LAYER_ZOOM[layer],
+      getSize: () => ({ width: VW, height: VH }),
+      onViewChange: () => () => {},
+    };
+    return projectRoutes(adapter, dispatchRoutes, { cullMarginPx: 200 });
+  }, [dispatchRoutes, layer]);
 
   const tiles = useMemo(
     () =>
@@ -311,6 +341,55 @@ export function TacticalMap({
             {isSelected && (
               <text y={-16} textAnchor="middle" fontFamily="sans-serif" fontSize={11} fill="var(--tac-ink)" fontWeight="bold">
                 {asset.id}
+              </text>
+            )}
+          </g>
+        );
+      })}
+
+      {/* Assignment route overlay — committed dispatch legs, colour-coded by
+          allocation health (green/amber/red). Projected via the MapAdapter so
+          the identical RouteFeature data renders on Leaflet/Google/etc. too. */}
+      {projectedRoutes.map((r) => {
+        const color = r.color ?? ROUTE_STATUS_COLOR[r.status];
+        const pts = toPolylinePoints(r);
+        return (
+          <g key={`route-${r.id}`} opacity={r.selected ? 1 : 0.95}>
+            <polyline
+              points={pts}
+              fill="none"
+              stroke={color}
+              strokeWidth={r.selected ? 8 : 6}
+              strokeOpacity={0.22}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <polyline
+              points={pts}
+              fill="none"
+              stroke={color}
+              strokeWidth={r.selected ? 3.5 : 2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {r.start && (
+              <circle cx={r.start.x} cy={r.start.y} r={5} fill="var(--tac-panel)" stroke={color} strokeWidth={2} />
+            )}
+            {r.end && <circle cx={r.end.x} cy={r.end.y} r={5} fill={color} stroke="#fff" strokeWidth={1.5} />}
+            {r.label && r.midpoint && (
+              <text
+                x={r.midpoint.x}
+                y={r.midpoint.y - 7}
+                textAnchor="middle"
+                fontSize={10}
+                fontFamily="sans-serif"
+                fontWeight="bold"
+                fill={color}
+                stroke="var(--tac-bg)"
+                strokeWidth={3}
+                paintOrder="stroke"
+              >
+                {r.label}
               </text>
             )}
           </g>

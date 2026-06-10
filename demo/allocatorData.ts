@@ -7,8 +7,8 @@
  * surfaces a realistic green/amber/red spread. All dates are relative to the
  * container clock and the spreads are deterministic per index.
  */
-import { TRUCKS, DRIVERS } from './truckDemoData';
-import type { ResourceCandidate, DispatchRequirements } from '../src/index';
+import { TRUCKS, DRIVERS, BASES } from './truckDemoData';
+import type { ResourceCandidate, DispatchRequirements, LngLat } from '../src/index';
 
 const NOW = new Date();
 
@@ -83,7 +83,7 @@ export const ALLOCATOR_DISPATCHES: DispatchRequirements[] = [
   },
   {
     id: 'd-flatbed-den',
-    label: 'ABQ → DEN · flatbed',
+    label: 'ABQ → ELP · flatbed',
     start: atHour(2, 6),
     end: atHour(2, 16), // 10h
     distanceMiles: 450,
@@ -101,3 +101,16 @@ export const ALLOCATOR_DISPATCHES: DispatchRequirements[] = [
     requiredLicenseType: 'CDL-B',
   },
 ];
+
+// Geographic leg for each dispatch (origin → destination), used to draw the
+// committed-assignment route overlay on the map. Keyed by dispatch id; the
+// local shuttle has no inter-city leg so it draws no route.
+const BY_CODE = new Map<string, LngLat>(BASES.map((b) => [b.id, { lng: b.lng, lat: b.lat }]));
+function leg(...codes: string[]): LngLat[] {
+  return codes.map((c) => BY_CODE.get(c)!).filter(Boolean);
+}
+
+export const DISPATCH_PATHS: Record<string, LngLat[]> = {
+  'd-reefer-lax': leg('PHX', 'LAX'),
+  'd-flatbed-den': leg('ABQ', 'ELP'),
+};

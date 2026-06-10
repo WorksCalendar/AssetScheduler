@@ -33,6 +33,9 @@ import type {
   DispatchRequirements,
   AssignmentRow,
   WorksCalendarEvent,
+  RouteFeature,
+  RouteStatus,
+  LngLat,
 } from '../src/index';
 
 const TABS: readonly OpsTab[] = [
@@ -55,6 +58,8 @@ export interface OpsConsoleProps {
   locationAssets: readonly LocationAsset[];
   dispatches: readonly DispatchRequirements[];
   resources: readonly ResourceCandidate[];
+  /** Geographic leg per dispatch id, for the map route overlay. */
+  dispatchPaths?: Record<string, LngLat[]>;
   initialMode?: OpsThemeMode;
 }
 
@@ -66,6 +71,7 @@ export function OpsConsole({
   locationAssets,
   dispatches,
   resources,
+  dispatchPaths,
   initialMode = 'dark',
 }: OpsConsoleProps) {
   const [mode, setMode] = useState<OpsThemeMode>(initialMode);
@@ -226,6 +232,27 @@ export function OpsConsole({
 
   const notice = issues.length > 0 ? <OpsAlertBar items={issues} /> : undefined;
 
+  // One route per assigned dispatch that has a geographic leg, colour-coded by
+  // the worst grade among the resources committed to it.
+  const routeFeatures = useMemo<RouteFeature[]>(() => {
+    if (!dispatchPaths) return [];
+    const rank: Record<RouteStatus, number> = { green: 0, amber: 1, red: 2 };
+    const byDispatch = new Map<string, { status: RouteStatus; label: string }>();
+    for (const row of assignmentRows) {
+      const path = dispatchPaths[row.dispatch.id];
+      if (!path || path.length < 2) continue;
+      const prev = byDispatch.get(row.dispatch.id);
+      const status = !prev || rank[row.status] > rank[prev.status] ? row.status : prev.status;
+      byDispatch.set(row.dispatch.id, { status, label: row.dispatch.label });
+    }
+    return [...byDispatch.entries()].map(([id, v]) => ({
+      id,
+      path: dispatchPaths[id]!,
+      status: v.status,
+      label: v.label,
+    }));
+  }, [assignmentRows, dispatchPaths]);
+
   const subHeader = useMemo(() => {
     if (activeTab === 'locations') {
       return (
@@ -273,6 +300,7 @@ export function OpsConsole({
           <WorksCalendar
             {...calendar}
             events={mergedEvents}
+            dispatchRoutes={routeFeatures}
             ref={apiRef}
             initialView="dispatch"
             theme={mode === 'dark' ? 'ops-dark' : 'ops-light'}

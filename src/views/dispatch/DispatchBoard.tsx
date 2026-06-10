@@ -48,6 +48,8 @@ export interface DispatchBoardProps {
    *  lookup returns a non-empty list for a leg's `from`/`to` facility
    *  codes, the breadcrumb traces those waypoints as a polyline. */
   readonly getRouteWaypoints?: (fromCode: string, toCode: string) => readonly { lat: number; lng: number }[] | null;
+  /** Geographic route overlay (committed assignment legs) for the map. */
+  readonly dispatchRoutes?: readonly import('../../map').RouteFeature[];
 }
 
 const LAYERS: { id: MapLayer; label: string }[] = [
@@ -59,7 +61,7 @@ const LAYERS: { id: MapLayer; label: string }[] = [
 
 export function DispatchBoard({
   events, assets = [], initialDate, currentDate, onCurrentDateChange, viewSwitcher,
-  getRouteWaypoints,
+  getRouteWaypoints, dispatchRoutes,
 }: DispatchBoardProps) {
   const [uncontrolledDate, setUncontrolledDate] = useState<Date>(() => {
     if (currentDate) return currentDate;
@@ -229,6 +231,7 @@ export function DispatchBoard({
             onSelectAsset={setSelectedAsset}
             layer={layer}
             {...(getRouteWaypoints ? { getRouteWaypoints } : {})}
+            {...(dispatchRoutes ? { dispatchRoutes } : {})}
           />
 
           {/* Layer switcher */}

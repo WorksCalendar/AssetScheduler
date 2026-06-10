@@ -12,7 +12,7 @@ import { createRoot } from 'react-dom/client';
 import type { WorksCalendarEvent } from '../src/index';
 import { OpsConsole } from './OpsConsole';
 import { TRUCKS, TRUCK_ROUTES, DRIVERS, BASES, REGIONS } from './truckDemoData';
-import { ALLOCATOR_CANDIDATES, ALLOCATOR_DISPATCHES } from './allocatorData';
+import { ALLOCATOR_CANDIDATES, ALLOCATOR_DISPATCHES, DISPATCH_PATHS } from './allocatorData';
 import { getWaypoints } from './highways';
 
 const CALENDAR_ID = 'dispatch-demo-v3';
@@ -277,6 +277,7 @@ function DemoApp() {
         locationAssets={DEMO_LOCATION_ASSETS}
         dispatches={ALLOCATOR_DISPATCHES}
         resources={ALLOCATOR_CANDIDATES}
+        dispatchPaths={DISPATCH_PATHS}
         initialMode="dark"
         calendar={{
           calendarId: CALENDAR_ID,
