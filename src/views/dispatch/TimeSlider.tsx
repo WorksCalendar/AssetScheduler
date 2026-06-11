@@ -11,6 +11,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Slider } from './Slider';
+import { packLanes } from './ganttLanes';
 import type { DispatchAsset, DispatchSegment } from './types';
 
 interface Props {
@@ -107,6 +108,30 @@ export function TimeSlider({
 
   const selectedAssetData = assets.find((a) => a.id === selectedAsset) ?? null;
   const segments = selectedAsset ? segmentsByAsset.get(selectedAsset) ?? [] : [];
+
+  // Pack the visible legs into lanes so overlapping / multi-day jobs stack
+  // vertically instead of colliding on a single row. Geometry only (no
+  // selectedDate) so scrubbing the slider doesn't repack.
+  const packed = useMemo(() => {
+    const totalHours = windowDays * HOURS_PER_DAY;
+    const visible = segments
+      .map((seg, i) => {
+        const startHour = (seg.from.time.getTime() - origin.getTime()) / MS_PER_HOUR;
+        const endHour = (seg.to.time.getTime() - origin.getTime()) / MS_PER_HOUR;
+        return {
+          seg,
+          i,
+          startHour,
+          endHour,
+          start: Math.max(0, startHour),
+          end: Math.min(totalHours, endHour),
+        };
+      })
+      .filter((b) => b.endHour > 0 && b.startHour < totalHours);
+    const { lanes, laneCount } = packLanes(visible);
+    const items = lanes.map((l) => ({ ...l.item, lane: l.lane }));
+    return { items, laneCount: Math.max(1, laneCount), totalHours };
+  }, [segments, origin, windowDays]);
 
   const handleDayChange = (value: number[]) => {
     const dayIndex = value[0] ?? 0;
@@ -264,146 +289,112 @@ export function TimeSlider({
               ))}
             </div>
 
-            {/* Gantt body — bars positioned as % of the windowDays timeline.
-                 Day gridlines + today/selected cursors render as absolutely
-                 positioned overlays so bars and grid stay aligned. */}
-            <div className="h-12 relative overflow-hidden">
-              {/* Day gridlines */}
-              {Array.from({ length: windowDays + 1 }, (_, i) => (
-                <div
-                  key={`grid-${i}`}
-                  className="absolute top-0 bottom-0 border-l border-[color:var(--tac-line-soft)]"
-                  style={{ left: `${(i / windowDays) * 100}%` }}
-                />
-              ))}
-              {/* Wall-clock "now" cursor (dashed red) */}
-              {todayIndex >= 0 && (
-                <div
-                  className="absolute top-0 bottom-0 border-l border-dashed border-[#c0392b]/60 pointer-events-none"
-                  style={{ left: `${(todayIndex / windowDays) * 100}%` }}
-                  aria-hidden
-                />
-              )}
-              {/* Selected-time cursor (solid black) */}
-              <div
-                className="absolute top-0 bottom-0 border-l-2 border-[color:var(--tac-ink)] pointer-events-none"
-                style={{
-                  left: `${
-                    ((currentDay * HOURS_PER_DAY + selectedDate.getUTCHours()) /
-                      (windowDays * HOURS_PER_DAY)) *
-                    100
-                  }%`,
-                }}
-                aria-hidden
-              />
-              {/* Route bars. Trucks visit one place at a time, so we stack
-                   them on a single lane and let the bar take the full row
-                   height — easier to read than the previous 3-lane SVG.
-                   Segments entirely outside the visible window are skipped;
-                   partially-visible ones are clipped to the window edges so
-                   the bar doesn't overrun (or hug) the gantt origin. */}
-              {(() => {
-                const totalHours = windowDays * HOURS_PER_DAY;
-                const bars = segments.flatMap((seg, i) => {
-                  const startHour =
-                    (seg.from.time.getTime() - origin.getTime()) / MS_PER_HOUR;
-                  const endHour =
-                    (seg.to.time.getTime() - origin.getTime()) / MS_PER_HOUR;
-                  if (endHour <= 0 || startHour >= totalHours) return [];
-                  const clippedStart = Math.max(0, startHour);
-                  const clippedEnd = Math.min(totalHours, endHour);
-                  const leftPct = (clippedStart / totalHours) * 100;
-                  const widthPct = Math.max(
-                    0.6,
-                    ((clippedEnd - clippedStart) / totalHours) * 100,
-                  );
-                  const isPast = seg.to.time.getTime() <= selectedDate.getTime();
-                  const isActive =
-                    seg.from.time.getTime() <= selectedDate.getTime() &&
-                    selectedDate.getTime() < seg.to.time.getTime();
-                  const fmt = (d: Date) =>
-                    d.toLocaleString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: 'numeric',
-                      minute: '2-digit',
-                      hour12: true,
-                      timeZone: 'UTC',
-                    });
-                  const durMins = Math.max(
-                    0,
-                    Math.round(
-                      (seg.to.time.getTime() - seg.from.time.getTime()) / 60_000,
-                    ),
-                  );
-                  const durLabel =
-                    durMins >= 60
-                      ? `${Math.floor(durMins / 60)}h ${(durMins % 60)
-                          .toString()
-                          .padStart(2, '0')}m`
-                      : `${durMins}m`;
-                  const driverPart = selectedAssetData.driverName
-                    ? `\nDriver: ${selectedAssetData.driverName}`
-                    : '';
-                  const estPart = seg.estimate
-                    ? `\nEst: ${
-                        seg.estimate.minutes >= 60
-                          ? `${Math.floor(seg.estimate.minutes / 60)}h ${Math.round(
-                              seg.estimate.minutes % 60,
-                            )
-                              .toString()
-                              .padStart(2, '0')}m`
-                          : `${Math.round(seg.estimate.minutes)}m`
-                      } by ${seg.estimate.profileLabel.toLowerCase()}`
-                    : '';
-                  return [
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => onDateChange(new Date(seg.from.time))}
-                      title={`${seg.from.facilityCode} → ${seg.to.facilityCode}\n${fmt(seg.from.time)} – ${fmt(seg.to.time)} (${durLabel})${estPart}${driverPart}`}
-                      className="absolute rounded-sm text-[10px] font-semibold text-white overflow-hidden whitespace-nowrap px-1.5 border border-black/15 hover:ring-2 hover:ring-[color:var(--tac-ink)] hover:z-10 focus:outline-none focus:ring-2 focus:ring-[color:var(--tac-ink)] focus:z-10"
-                      style={{
-                        left: `${leftPct}%`,
-                        width: `${widthPct}%`,
-                        top: '6px',
-                        bottom: '6px',
-                        background: isPast ? selectedAssetData.color : '#999',
-                        opacity: isPast ? 0.95 : 0.55,
-                        boxShadow: isActive
-                          ? '0 0 0 2px var(--tac-ink) inset, 0 0 0 1px var(--tac-panel)'
-                          : undefined,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '4px',
-                      }}
-                    >
-                      <span>
-                        {seg.from.facilityCode}→{seg.to.facilityCode}
-                      </span>
-                      <span className="opacity-80 font-normal">{durLabel}</span>
-                    </button>,
-                  ];
+            {/* Gantt body — bars positioned as % of the windowDays timeline and
+                 packed into lanes (multi-day jobs span columns; overlapping
+                 jobs stack). Day gridlines + cursors are full-height overlays
+                 so bars and grid stay aligned; scrolls when lanes overflow. */}
+            {(() => {
+              const LANE_H = 24;
+              const MAX_VISIBLE_LANES = 4;
+              const contentH = packed.laneCount * LANE_H;
+              const viewH = Math.min(packed.laneCount, MAX_VISIBLE_LANES) * LANE_H;
+              const selX =
+                ((currentDay * HOURS_PER_DAY + selectedDate.getUTCHours()) /
+                  (windowDays * HOURS_PER_DAY)) *
+                100;
+              const fmt = (d: Date) =>
+                d.toLocaleString('en-US', {
+                  month: 'short', day: 'numeric', hour: 'numeric',
+                  minute: '2-digit', hour12: true, timeZone: 'UTC',
                 });
-                // Two empty cases worth distinguishing: the asset truly has
-                // no legs to show, vs. it has legs but every one of them was
-                // clipped out by the current window. The second case is easy
-                // to hit by scrubbing the slider far enough away, and going
-                // blank with no message leaves dispatchers wondering whether
-                // the data loaded.
-                if (bars.length === 0) {
-                  return (
-                    <div className="absolute inset-0 flex items-center justify-center text-[10px] text-[#7a6e5b] italic px-3 text-center">
-                      {segments.length === 0
-                        ? 'No route segments for this asset'
-                        : 'All legs are outside the visible window — scrub the slider to bring them into view'}
-                    </div>
-                  );
-                }
-                return bars;
-              })()}
-            </div>
+              return (
+                <div className="relative overflow-x-hidden overflow-y-auto" style={{ height: viewH }}>
+                  <div className="relative" style={{ height: contentH }}>
+                    {/* Day gridlines */}
+                    {Array.from({ length: windowDays + 1 }, (_, i) => (
+                      <div
+                        key={`grid-${i}`}
+                        className="absolute top-0 bottom-0 border-l border-[color:var(--tac-line-soft)]"
+                        style={{ left: `${(i / windowDays) * 100}%` }}
+                      />
+                    ))}
+                    {todayIndex >= 0 && (
+                      <div
+                        className="absolute top-0 bottom-0 border-l border-dashed border-[#c0392b]/60 pointer-events-none"
+                        style={{ left: `${(todayIndex / windowDays) * 100}%` }}
+                        aria-hidden
+                      />
+                    )}
+                    <div
+                      className="absolute top-0 bottom-0 border-l-2 border-[color:var(--tac-ink)] pointer-events-none"
+                      style={{ left: `${selX}%` }}
+                      aria-hidden
+                    />
+
+                    {packed.items.length === 0 ? (
+                      <div className="absolute inset-0 flex items-center justify-center text-[10px] text-[#7a6e5b] italic px-3 text-center">
+                        {segments.length === 0
+                          ? 'No route segments for this asset'
+                          : 'All legs are outside the visible window — scrub the slider to bring them into view'}
+                      </div>
+                    ) : (
+                      packed.items.map((b) => {
+                        const leftPct = (b.start / packed.totalHours) * 100;
+                        const widthPct = Math.max(
+                          0.5,
+                          ((b.end - b.start) / packed.totalHours) * 100,
+                        );
+                        const isPast = b.seg.to.time.getTime() <= selectedDate.getTime();
+                        const isActive =
+                          b.seg.from.time.getTime() <= selectedDate.getTime() &&
+                          selectedDate.getTime() < b.seg.to.time.getTime();
+                        const durMins = Math.max(
+                          0,
+                          Math.round((b.seg.to.time.getTime() - b.seg.from.time.getTime()) / 60_000),
+                        );
+                        const durLabel =
+                          durMins >= 60
+                            ? `${Math.floor(durMins / 60)}h ${(durMins % 60).toString().padStart(2, '0')}m`
+                            : `${durMins}m`;
+                        const driverPart = selectedAssetData.driverName
+                          ? `\nDriver: ${selectedAssetData.driverName}`
+                          : '';
+                        // Only label when the bar is wide enough to read —
+                        // otherwise mid-character clipping makes it gibberish.
+                        const showCodes = widthPct >= 5;
+                        const showDur = widthPct >= 12;
+                        return (
+                          <button
+                            key={b.i}
+                            type="button"
+                            onClick={() => onDateChange(new Date(b.seg.from.time))}
+                            title={`${b.seg.from.facilityCode} → ${b.seg.to.facilityCode}\n${fmt(b.seg.from.time)} – ${fmt(b.seg.to.time)} (${durLabel})${driverPart}`}
+                            className="absolute rounded text-[10px] font-semibold text-white overflow-hidden whitespace-nowrap px-1.5 border border-black/20 flex items-center justify-center gap-1 hover:ring-2 hover:ring-[color:var(--tac-ink)] hover:z-10 focus:outline-none focus:ring-2 focus:ring-[color:var(--tac-ink)] focus:z-10"
+                            style={{
+                              left: `${leftPct}%`,
+                              width: `${widthPct}%`,
+                              minWidth: '3px',
+                              top: b.lane * LANE_H + 3,
+                              height: LANE_H - 6,
+                              background: isPast ? selectedAssetData.color : '#999',
+                              opacity: isPast ? 0.95 : 0.6,
+                              boxShadow: isActive
+                                ? '0 0 0 2px var(--tac-ink) inset, 0 0 0 1px var(--tac-panel)'
+                                : undefined,
+                            }}
+                          >
+                            {showCodes && (
+                              <span>{b.seg.from.facilityCode}→{b.seg.to.facilityCode}</span>
+                            )}
+                            {showDur && <span className="opacity-80 font-normal">{durLabel}</span>}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
         </div>
       )}
     </div>
