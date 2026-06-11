@@ -128,7 +128,7 @@ export function TacticalMap({
   // position at the slider time. Geographic only — projection happens in render
   // so it re-runs on layer change.
   const assetTails = useMemo(() => {
-    if (selectedAsset) return [];
+    if (selectedAsset || tailHours <= 0) return [];
     const endMs = selectedDate.getTime();
     const startMs = endMs - tailHours * 3_600_000;
     const out: { id: string; color: string; pts: { lat: number; lng: number }[] }[] = [];

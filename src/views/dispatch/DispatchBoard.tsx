@@ -97,6 +97,15 @@ export function DispatchBoard({
   };
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [layer, setLayer] = useState<MapLayer>('region');
+  // Comet-tail length (hours) shown when nothing is selected; 0 = off.
+  // Cycled from the map legend.
+  const TAIL_STEPS = [3, 6, 12, 0] as const;
+  const [tailHours, setTailHours] = useState<number>(3);
+  const cycleTail = () =>
+    setTailHours((h) => {
+      const i = TAIL_STEPS.indexOf(h as (typeof TAIL_STEPS)[number]);
+      return TAIL_STEPS[(i + 1) % TAIL_STEPS.length]!;
+    });
 
   const derived = useMemo(() => deriveDispatchData(events, assets), [events, assets]);
   const conflicts = useMemo(
@@ -230,6 +239,7 @@ export function DispatchBoard({
             selectedAsset={selectedAsset}
             onSelectAsset={setSelectedAsset}
             layer={layer}
+            tailHours={tailHours}
             {...(getRouteWaypoints ? { getRouteWaypoints } : {})}
             {...(dispatchRoutes ? { dispatchRoutes } : {})}
           />
@@ -269,6 +279,23 @@ export function DispatchBoard({
               <span className="inline-block w-3 h-0 border-t-2 border-dashed border-[#c0392b]" />
               <span className="text-[#c0392b] font-bold">Conflict</span>
             </div>
+            <button
+              type="button"
+              onClick={cycleTail}
+              title="Toggle the recent-travel tail length"
+              className="flex items-center gap-1.5 mt-1 pt-1 w-full border-t border-[color:var(--tac-line-soft)] cursor-pointer text-[var(--tac-ink-soft)] hover:text-[var(--tac-ink)]"
+            >
+              <span
+                className="inline-block w-3 h-1 rounded-full"
+                style={{
+                  background: tailHours > 0
+                    ? 'linear-gradient(90deg, transparent, var(--tac-ink))'
+                    : 'transparent',
+                  border: tailHours > 0 ? 'none' : '1px dashed var(--tac-line)',
+                }}
+              />
+              <span className="font-bold">Tail{tailHours > 0 ? ` · ${tailHours}h` : ': Off'}</span>
+            </button>
           </div>
         </div>
       </div>

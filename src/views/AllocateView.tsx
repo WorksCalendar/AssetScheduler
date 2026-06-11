@@ -56,26 +56,40 @@ function CandidateCard({
   assigned,
   canAssign,
   onAssign,
+  committed,
 }: {
   candidate: ResourceCandidate;
   evaluation: CandidateEvaluation;
   assigned: boolean;
   canAssign: boolean;
   onAssign: () => void;
+  /** Rendered in the Committed lane — flips the grade to confirmed/conflict. */
+  committed?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const failing = evaluation.checks.filter((c) => c.status !== 'green');
   const passed = evaluation.checks.length - failing.length;
   const shown = open ? evaluation.checks : failing;
+  const conflict = committed === true && evaluation.status !== 'green';
+  const tagLabel = committed
+    ? evaluation.status === 'green'
+      ? 'CONFIRMED'
+      : 'CONFLICT'
+    : STATUS_TAG[evaluation.status];
 
   return (
-    <div className={cls['card']} data-status={evaluation.status} data-assigned={assigned || undefined}>
+    <div
+      className={cls['card']}
+      data-status={evaluation.status}
+      data-assigned={assigned || undefined}
+      data-conflict={conflict || undefined}
+    >
       <div className={cls['cardTop']}>
         <span className={cls['dot']} data-status={evaluation.status} />
         <span className={cls['cardName']}>{candidate.label}</span>
-        {assigned && <span className={cls['assignedTag']}>ASSIGNED</span>}
-        <span className={cls['statusTag']} data-status={evaluation.status}>
-          {STATUS_TAG[evaluation.status]}
+        {assigned && !committed && <span className={cls['assignedTag']}>ASSIGNED</span>}
+        <span className={cls['statusTag']} data-status={evaluation.status} data-conflict={conflict || undefined}>
+          {tagLabel}
         </span>
       </div>
       {candidate.role && <div className={cls['cardRole']}>{candidate.role}</div>}
@@ -143,8 +157,11 @@ export function AllocateView({
   }, [selected, candidates, options]);
 
   const byKind = useMemo(() => {
+    // Uncommitted candidates only — assigned ones lift into the Committed lane.
+    const assigned = new Set(selected ? assignments?.[selected.id] ?? [] : []);
     const groups = new Map<ResourceKind, ResourceCandidate[]>();
     for (const c of candidates) {
+      if (assigned.has(c.id)) continue;
       const list = groups.get(c.kind) ?? [];
       list.push(c);
       groups.set(c.kind, list);
@@ -155,7 +172,17 @@ export function AllocateView({
       );
     }
     return groups;
-  }, [candidates, evaluations]);
+  }, [candidates, evaluations, assignments, selected]);
+
+  const committedList = useMemo(() => {
+    const assigned = new Set(selected ? assignments?.[selected.id] ?? [] : []);
+    // Conflicts surface first in the Committed lane (worst status on top).
+    return candidates
+      .filter((c) => assigned.has(c.id))
+      .sort((a, b) =>
+        -compareByStatus(evaluations.get(a.id)?.status ?? 'green', evaluations.get(b.id)?.status ?? 'green'),
+      );
+  }, [candidates, evaluations, assignments, selected]);
 
   const counts = useMemo(() => {
     let green = 0;
@@ -220,6 +247,30 @@ export function AllocateView({
           </span>
         )}
       </div>
+
+      {committedList.length > 0 && (
+        <div className={cls['section']}>
+          <div className={cls['sectionHead']} data-committed>
+            Committed · {committedList.length}
+          </div>
+          <div className={cls['cards']}>
+            {committedList.map((c) => {
+              const e = evaluations.get(c.id);
+              return e ? (
+                <CandidateCard
+                  key={c.id}
+                  candidate={c}
+                  evaluation={e}
+                  assigned
+                  committed
+                  canAssign={onToggleAssign != null}
+                  onAssign={() => onToggleAssign?.(selected.id, c.id)}
+                />
+              ) : null;
+            })}
+          </div>
+        </div>
+      )}
 
       {(['asset', 'crew'] as const).map((kind) => {
         const list = byKind.get(kind) ?? [];

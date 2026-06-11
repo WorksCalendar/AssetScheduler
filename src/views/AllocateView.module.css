@@ -56,6 +56,25 @@
   color: var(--ops-text-faint, #8b939c);
   margin: 0 0 8px 2px;
 }
+.sectionHead[data-committed] {
+  color: var(--ops-accent, #2563eb);
+}
+
+/* Committed lane: confirmed (calm) vs conflict (pulsing, needs attention). */
+@keyframes ops-conflict-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px var(--ops-bad, #dc2626) inset, 0 0 0 0 transparent; }
+  50%      { box-shadow: 0 0 0 1px var(--ops-bad, #dc2626) inset, 0 0 0 4px color-mix(in srgb, var(--ops-bad, #dc2626) 22%, transparent); }
+}
+.card[data-conflict] {
+  border-color: var(--ops-bad, #dc2626);
+  animation: ops-conflict-pulse 1.8s ease-in-out infinite;
+}
+.statusTag[data-conflict] {
+  color: var(--ops-bad, #dc2626) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .card[data-conflict] { animation: none; box-shadow: 0 0 0 1px var(--ops-bad, #dc2626) inset; }
+}
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
