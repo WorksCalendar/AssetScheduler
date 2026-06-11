@@ -266,7 +266,7 @@ export function DispatchBoard({
           </div>
 
           {/* Legend */}
-          <div className="absolute bottom-3 left-3 bg-[var(--tac-panel)] border border-[color:var(--tac-line)] p-2 rounded-sm text-[9px] text-[var(--tac-ink-soft)]">
+          <div className="absolute top-3 left-3 bg-[var(--tac-panel)] border border-[color:var(--tac-line)] p-2 rounded-sm text-[9px] text-[var(--tac-ink-soft)]">
             <div className="flex items-center gap-1.5 mb-0.5">
               <span className="inline-block w-3 h-1 bg-[var(--tac-sel)]" />
               <span>Traveled</span>
@@ -297,18 +297,18 @@ export function DispatchBoard({
               <span className="font-bold">Tail{tailHours > 0 ? ` · ${tailHours}h` : ': Off'}</span>
             </button>
           </div>
-        </div>
-      </div>
 
-      {/* Bottom: time slider + per-asset Gantt */}
-      <div className="h-44 flex-shrink-0">
-        <TimeSlider
-          selectedDate={selectedDate}
-          onDateChange={setSelectedDate}
-          selectedAsset={selectedAsset}
-          assets={derived.assets}
-          segmentsByAsset={derived.segmentsByAsset}
-        />
+          {/* Time scrubber — thin, wide overlay pinned to the map bottom so it
+              no longer needs its own row. Expands a mini-Gantt when an asset is
+              selected. */}
+          <TimeSlider
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
+            selectedAsset={selectedAsset}
+            assets={derived.assets}
+            segmentsByAsset={derived.segmentsByAsset}
+          />
+        </div>
       </div>
 
       {/* Footer */}

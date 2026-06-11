@@ -123,11 +123,11 @@ export function TimeSlider({
   };
 
   return (
-    <div className="h-full flex bg-[var(--tac-panel)] border-t-2 border-[color:var(--tac-line)]">
-      {/* Day + Hour controls */}
-      <div className="w-64 flex-shrink-0 border-r border-[color:var(--tac-line)] px-3 py-2 flex flex-col justify-center gap-2">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-serif text-[var(--tac-ink-soft)] uppercase tracking-wider w-8">Day</span>
+    <div className="absolute left-2 right-2 bottom-2 z-[4] flex flex-col-reverse rounded-md border border-[color:var(--tac-line)] bg-[color:color-mix(in_srgb,var(--tac-panel)_92%,transparent)] backdrop-blur-sm shadow-lg overflow-hidden">
+      {/* Day + Hour scrubbers — wide and thin, side by side. */}
+      <div className="flex items-center gap-5 px-3 py-1.5 border-t border-[color:var(--tac-line-soft)]">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="text-[10px] font-serif text-[var(--tac-ink-soft)] uppercase tracking-wider">Day</span>
           <Slider
             value={[currentDay]}
             onValueChange={handleDayChange}
@@ -140,9 +140,8 @@ export function TimeSlider({
             {days[currentDay]?.label ?? ''}
           </span>
         </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-serif text-[var(--tac-ink-soft)] uppercase tracking-wider w-8">Hr</span>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="text-[10px] font-serif text-[var(--tac-ink-soft)] uppercase tracking-wider">Hr</span>
           <Slider
             value={[selectedDate.getUTCHours()]}
             onValueChange={handleHourChange}
@@ -151,32 +150,20 @@ export function TimeSlider({
             step={1}
             className="flex-1"
           />
-          <span className="text-[10px] font-bold text-[var(--tac-ink)] w-16 text-right">
+          <span className="text-[10px] font-bold text-[var(--tac-ink)] w-14 text-right">
             {selectedDate.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true, timeZone: 'UTC' })}
           </span>
         </div>
-
-        <div className="flex gap-0 mt-0.5">
-          {days.map((d) => (
-            <div
-              key={d.index}
-              className="flex-1 text-center text-[7px]"
-              style={{ color: d.isToday ? '#c0392b' : '#7a6e5b' }}
-            >
-              {d.isToday ? 'TODAY' : d.date.getUTCDate()}
-            </div>
-          ))}
-        </div>
       </div>
 
-      {/* Mini Gantt for the selected asset */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {selectedAssetData ? (
-          <>
-            {/* Title + active-leg one-liner. Tells dispatch who's driving,
-                 where the truck is, and what the next move is — readable
-                 even when the per-leg pills below are pixel-narrow. */}
-            <div className="px-3 pt-2 flex items-baseline gap-2 min-w-0">
+      {/* Mini Gantt for the selected asset — only mounts when one is picked,
+          so the overlay stays a thin scrubber otherwise. */}
+      {selectedAssetData && (
+        <div className="flex flex-col overflow-hidden min-w-0">
+          {/* Title + active-leg one-liner. Tells dispatch who's driving,
+               where the truck is, and what the next move is — readable
+               even when the per-leg pills below are pixel-narrow. */}
+          <div className="px-3 pt-2 flex items-baseline gap-2 min-w-0">
               <span
                 className="inline-block w-2 h-2 rounded-full flex-shrink-0"
                 style={{ background: selectedAssetData.color }}
@@ -280,7 +267,7 @@ export function TimeSlider({
             {/* Gantt body — bars positioned as % of the windowDays timeline.
                  Day gridlines + today/selected cursors render as absolutely
                  positioned overlays so bars and grid stay aligned. */}
-            <div className="flex-1 relative overflow-hidden">
+            <div className="h-12 relative overflow-hidden">
               {/* Day gridlines */}
               {Array.from({ length: windowDays + 1 }, (_, i) => (
                 <div
@@ -417,13 +404,8 @@ export function TimeSlider({
                 return bars;
               })()}
             </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-[10px] text-[#7a6e5b] italic">
-            Click an asset on the map or sidebar to see its route
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
