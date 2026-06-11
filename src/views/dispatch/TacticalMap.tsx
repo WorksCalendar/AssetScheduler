@@ -10,6 +10,8 @@ import { useMemo } from 'react';
 import { project, DEFAULT_LAYER_BOUNDS } from './projection';
 import { positionAt } from './deriveData';
 import { DEFAULT_LAYER_ZOOM, tilesForBounds } from './tileLayer';
+import { projectRoutes, toPolylinePoints } from '../../map';
+import type { MapAdapter, RouteFeature, RouteStatus } from '../../map';
 import type {
   DispatchAsset,
   DispatchConflict,
@@ -38,7 +40,22 @@ interface Props {
    *  the leg passes through. When null/missing, the leg falls back to a
    *  3D quadratic-arch breadcrumb between the two endpoint stops. */
   readonly getRouteWaypoints?: (fromCode: string, toCode: string) => readonly { lat: number; lng: number }[] | null;
+  /** Geographic route overlay (e.g. committed assignment legs) drawn through
+   *  the MapAdapter abstraction so the same data renders on any host map. */
+  readonly dispatchRoutes?: readonly RouteFeature[];
+  /** When no asset is selected, draw a fading "comet tail" of each asset's
+   *  travel over the last this-many hours instead of the full breadcrumb
+   *  spaghetti. Default 3. */
+  readonly tailHours?: number;
 }
+
+const TAIL_SAMPLES = 14;
+
+const ROUTE_STATUS_COLOR: Record<RouteStatus, string> = {
+  green: '#16a34a',
+  amber: '#d97706',
+  red: '#dc2626',
+};
 
 const VW = 1000;
 const VH = 800;
@@ -56,10 +73,30 @@ export function TacticalMap({
   showTiles = true,
   tileUrl,
   getRouteWaypoints,
+  dispatchRoutes,
+  tailHours = 3,
 }: Props) {
   const bounds = DEFAULT_LAYER_BOUNDS[layer];
   const proj = (lat: number, lng: number): [number, number] =>
     project(bounds, lat, lng, VW, VH);
+
+  // Wrap this SVG's fixed-zoom projection as a MapAdapter, then project the
+  // geographic route overlay to viewBox space. Changing the layer (the SVG's
+  // "zoom") re-runs this via the memo dependency — the BYO-map equivalent of
+  // an onViewChange reproject.
+  const projectedRoutes = useMemo(() => {
+    if (!dispatchRoutes || dispatchRoutes.length === 0) return [];
+    const adapter: MapAdapter = {
+      project: ({ lat, lng }) => {
+        const [x, y] = proj(lat, lng);
+        return { x, y };
+      },
+      getZoom: () => DEFAULT_LAYER_ZOOM[layer],
+      getSize: () => ({ width: VW, height: VH }),
+      onViewChange: () => () => {},
+    };
+    return projectRoutes(adapter, dispatchRoutes, { cullMarginPx: 200 });
+  }, [dispatchRoutes, layer]);
 
   const tiles = useMemo(
     () =>
@@ -86,8 +123,37 @@ export function TacticalMap({
     return m;
   }, [assets]);
 
+  // Comet tails (only when nothing is selected): sample each asset's position
+  // over the last `tailHours` and keep the distinct points, head = current
+  // position at the slider time. Geographic only — projection happens in render
+  // so it re-runs on layer change.
+  const assetTails = useMemo(() => {
+    if (selectedAsset) return [];
+    const endMs = selectedDate.getTime();
+    const startMs = endMs - tailHours * 3_600_000;
+    const out: { id: string; color: string; pts: { lat: number; lng: number }[] }[] = [];
+    for (const asset of assets) {
+      const stops = stopsByAsset.get(asset.id);
+      if (!stops) continue;
+      const pts: { lat: number; lng: number }[] = [];
+      for (let k = 0; k <= TAIL_SAMPLES; k++) {
+        const p = positionAt(stops, new Date(startMs + ((endMs - startMs) * k) / TAIL_SAMPLES));
+        if (!p) continue;
+        const last = pts[pts.length - 1];
+        // Drop consecutive ~identical samples so a parked asset draws nothing.
+        if (!last || Math.abs(last.lat - p.lat) > 1e-6 || Math.abs(last.lng - p.lng) > 1e-6) {
+          pts.push({ lat: p.lat, lng: p.lng });
+        }
+      }
+      if (pts.length >= 2) {
+        out.push({ id: asset.id, color: assetColorById.get(asset.id) ?? '#3d2b1f', pts });
+      }
+    }
+    return out;
+  }, [assets, stopsByAsset, selectedDate, selectedAsset, tailHours, assetColorById]);
+
   return (
-    <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full h-full" style={{ background: '#e8dcc8' }}>
+    <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full h-full" style={{ background: 'var(--tac-bg)' }}>
       <defs>
         <filter id="dispatch-ink">
           <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves={2} result="n" />
@@ -119,40 +185,33 @@ export function TacticalMap({
         </filter>
       </defs>
 
-      <rect width={VW} height={VH} fill="#e8dcc8" />
+      <rect width={VW} height={VH} fill="var(--tac-bg)" />
 
       {/* OSM raster tile basemap — each tile is placed by projecting its
-          NW/SE corners through the current layer's bounds. Tiles render
-          in their natural OSM colors so labels stay legible; a translucent
-          warm overlay below the data layer ties them to the dispatch
-          parchment palette without softening the map text. */}
+          NW/SE corners through the current layer's bounds. Tiles render in
+          their natural OSM colors (no tint overlay). */}
       {tiles.length > 0 && (
-        <>
-          <g>
-            {tiles.map((t) => {
-              const [x1, y1] = proj(t.nw.lat, t.nw.lng);
-              const [x2, y2] = proj(t.se.lat, t.se.lng);
-              const w = x2 - x1;
-              const h = y2 - y1;
-              return (
-                <image
-                  key={`${t.z}-${t.x}-${t.y}`}
-                  href={t.url}
-                  x={x1}
-                  y={y1}
-                  width={w}
-                  height={h}
-                  preserveAspectRatio="none"
-                  crossOrigin="anonymous"
-                  style={{ imageRendering: 'auto' }}
-                />
-              );
-            })}
-          </g>
-          {/* Faint parchment wash — pulls the OSM palette toward the
-              dispatch theme without blurring the underlying labels. */}
-          <rect width={VW} height={VH} fill="#e8dcc8" opacity={0.22} />
-        </>
+        <g>
+          {tiles.map((t) => {
+            const [x1, y1] = proj(t.nw.lat, t.nw.lng);
+            const [x2, y2] = proj(t.se.lat, t.se.lng);
+            const w = x2 - x1;
+            const h = y2 - y1;
+            return (
+              <image
+                key={`${t.z}-${t.x}-${t.y}`}
+                href={t.url}
+                x={x1}
+                y={y1}
+                width={w}
+                height={h}
+                preserveAspectRatio="none"
+                crossOrigin="anonymous"
+                style={{ imageRendering: 'auto' }}
+              />
+            );
+          })}
+        </g>
       )}
 
       {/* Layer-name watermark for the non-region zoom presets, since the
@@ -164,7 +223,7 @@ export function TacticalMap({
           textAnchor="middle"
           fontFamily="serif"
           fontSize={12}
-          fill="#5a3e2b"
+          fill="var(--tac-ink-soft)"
           letterSpacing={2}
           opacity={0.55}
         >
@@ -187,6 +246,9 @@ export function TacticalMap({
           hundreds of paths with multi-thousand-pixel coordinates +
           stops iOS Safari OOMing on the filter region. */}
       {assets.flatMap((asset) => {
+        // No selection → the comet tails carry recent progress instead of the
+        // full breadcrumb network, keeping the map calm.
+        if (!selectedAsset) return [];
         const segs = segmentsByAsset.get(asset.id) ?? [];
         const isSelected = asset.id === selectedAsset;
         const baseOpacity = selectedAsset ? (isSelected ? 1 : 0.015) : 0.35;
@@ -247,7 +309,7 @@ export function TacticalMap({
                   y1={y1}
                   x2={x2}
                   y2={y2}
-                  stroke="#3d2b1f"
+                  stroke="var(--tac-ink)"
                   strokeWidth={0.8}
                   strokeDasharray="1,4"
                   opacity={0.25}
@@ -273,15 +335,50 @@ export function TacticalMap({
         const [x, y] = proj(fac.lat, fac.lng);
         return (
           <g key={fac.code} transform={`translate(${x},${y})`}>
-            <circle r={8} fill="#fff" stroke="#3d2b1f" strokeWidth={1.5} filter="url(#dispatch-ink)" />
-            <text y={-12} textAnchor="middle" fontFamily="serif" fontSize={12} fill="#3d2b1f" fontWeight="bold">
+            <circle r={8} fill="var(--tac-panel)" stroke="var(--tac-ink)" strokeWidth={1.5} filter="url(#dispatch-ink)" />
+            <text y={-12} textAnchor="middle" fontFamily="serif" fontSize={12} fill="var(--tac-ink)" fontWeight="bold">
               {fac.code}
             </text>
             {fac.capacity != null && (
-              <text y={20} textAnchor="middle" fontFamily="sans-serif" fontSize={8} fill="#5a3e2b">
+              <text y={20} textAnchor="middle" fontFamily="sans-serif" fontSize={8} fill="var(--tac-ink-soft)">
                 {fac.capacity} docks
               </text>
             )}
+          </g>
+        );
+      })}
+
+      {/* Comet tails — recent travel behind each asset when nothing is
+          selected. Tapers + fades from the head (current position) back, so
+          direction and progress read at a glance without route spaghetti. */}
+      {assetTails.map((tail) => {
+        const pp = tail.pts.map((p) => proj(p.lat, p.lng));
+        const xs = pp.map((p) => p[0]);
+        const ys = pp.map((p) => p[1]);
+        const M = 200;
+        if (Math.max(...xs) < -M || Math.min(...xs) > VW + M || Math.max(...ys) < -M || Math.min(...ys) > VH + M) {
+          return null;
+        }
+        const n = pp.length - 1;
+        return (
+          <g key={`tail-${tail.id}`}>
+            {pp.slice(1).map(([x2, y2], i) => {
+              const [x1, y1] = pp[i]!;
+              const f = (i + 1) / n; // 0 (tail) → 1 (head)
+              return (
+                <line
+                  key={i}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke={tail.color}
+                  strokeWidth={0.6 + 2.4 * f}
+                  strokeOpacity={0.1 + 0.65 * f}
+                  strokeLinecap="round"
+                />
+              );
+            })}
           </g>
         );
       })}
@@ -316,8 +413,57 @@ export function TacticalMap({
                 on top of each other and the map turns into typographic
                 confetti. Hover state surfaces the id via the <title>. */}
             {isSelected && (
-              <text y={-16} textAnchor="middle" fontFamily="sans-serif" fontSize={11} fill="#3d2b1f" fontWeight="bold">
+              <text y={-16} textAnchor="middle" fontFamily="sans-serif" fontSize={11} fill="var(--tac-ink)" fontWeight="bold">
                 {asset.id}
+              </text>
+            )}
+          </g>
+        );
+      })}
+
+      {/* Assignment route overlay — committed dispatch legs, colour-coded by
+          allocation health (green/amber/red). Projected via the MapAdapter so
+          the identical RouteFeature data renders on Leaflet/Google/etc. too. */}
+      {projectedRoutes.map((r) => {
+        const color = r.color ?? ROUTE_STATUS_COLOR[r.status];
+        const pts = toPolylinePoints(r);
+        return (
+          <g key={`route-${r.id}`} opacity={r.selected ? 1 : 0.95}>
+            <polyline
+              points={pts}
+              fill="none"
+              stroke={color}
+              strokeWidth={r.selected ? 8 : 6}
+              strokeOpacity={0.22}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <polyline
+              points={pts}
+              fill="none"
+              stroke={color}
+              strokeWidth={r.selected ? 3.5 : 2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {r.start && (
+              <circle cx={r.start.x} cy={r.start.y} r={5} fill="var(--tac-panel)" stroke={color} strokeWidth={2} />
+            )}
+            {r.end && <circle cx={r.end.x} cy={r.end.y} r={5} fill={color} stroke="#fff" strokeWidth={1.5} />}
+            {r.label && r.midpoint && (
+              <text
+                x={r.midpoint.x}
+                y={r.midpoint.y - 7}
+                textAnchor="middle"
+                fontSize={10}
+                fontFamily="sans-serif"
+                fontWeight="bold"
+                fill={color}
+                stroke="var(--tac-bg)"
+                strokeWidth={3}
+                paintOrder="stroke"
+              >
+                {r.label}
               </text>
             )}
           </g>

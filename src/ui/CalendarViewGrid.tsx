@@ -114,6 +114,7 @@ export interface CalendarViewGridProps {
   dispatchEvaluator: DispatchEvaluator | undefined;
   onDispatchAssign: ((assetId: string, missionId: string | null, asOf: Date) => void) | undefined;
   getRouteWaypoints?: WorksCalendarProps['getRouteWaypoints'];
+  dispatchRoutes?: WorksCalendarProps['dispatchRoutes'];
   onApprovalAction: WorksCalendarProps['onApprovalAction'];
   canRequestAsset: boolean;
   // Handlers
@@ -152,7 +153,7 @@ export default function CalendarViewGrid({
   categoriesConfig, rawPools, strictAssetFiltering, resolveResourceLabel,
   activeAssetsZoom, setActiveAssetsZoom, activeAssetsCollapsed, setActiveAssetsCollapsed,
   effectiveLocationProvider, renderAssetLocation, renderPoolLocation, renderAssetBadges,
-  dispatchMissions, dispatchEvaluator, onDispatchAssign, getRouteWaypoints, onApprovalAction, canRequestAsset,
+  dispatchMissions, dispatchEvaluator, onDispatchAssign, getRouteWaypoints, dispatchRoutes, onApprovalAction, canRequestAsset,
   setFormEvent, setScheduleOpen, setImportOpen, setAssetRequestOpen, setActiveGroupBy,
   handleClearFilters, handleScheduleDateSelect, handlePoolDateSelect,
   handleEmployeeAddInternal, handleEmployeeDeleteInternal, handleShiftStatusChange,
@@ -289,6 +290,7 @@ export default function CalendarViewGrid({
                   currentDate: cal.currentDate,
                   onCurrentDateChange: cal.setCurrentDate,
                   getRouteWaypoints,
+                  dispatchRoutes,
                   onAsOfChange: cal.setCurrentDate,
                   viewSwitcher,
                 } as unknown as ComponentProps<typeof DispatchView>)} />

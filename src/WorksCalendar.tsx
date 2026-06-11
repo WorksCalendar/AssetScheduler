@@ -133,6 +133,7 @@ const WorksCalendarImpl = forwardRef<CalendarApi, WorksCalendarProps>(function W
     dispatchEvaluator,
     onDispatchAssign,
     getRouteWaypoints,
+    dispatchRoutes,
     emptyState,
 
     // ── Filter schema ──
@@ -473,6 +474,7 @@ const WorksCalendarImpl = forwardRef<CalendarApi, WorksCalendarProps>(function W
                 dispatchMissions={dispatchMissions} dispatchEvaluator={dispatchEvaluator}
                 onDispatchAssign={onDispatchAssign} onApprovalAction={onApprovalAction} canRequestAsset={canRequestAsset}
                 getRouteWaypoints={getRouteWaypoints}
+                dispatchRoutes={dispatchRoutes}
                 setFormEvent={setFormEvent} setScheduleOpen={setScheduleOpen} setImportOpen={setImportOpen}
                 setAssetRequestOpen={setAssetRequestOpen} setActiveGroupBy={setActiveGroupBy}
                 handleClearFilters={handleClearFilters} handleScheduleDateSelect={handleScheduleDateSelect}

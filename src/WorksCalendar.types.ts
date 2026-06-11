@@ -116,8 +116,6 @@ export type WorksCalendarConfig = {
   approvals?: UnknownRecord;
   /** Owner-configurable request-form schema. */
   requestForm?: { fields?: UnknownRecord[]; [key: string]: unknown };
-  /** Custom theme token overrides. */
-  customTheme?: UnknownRecord;
   [key: string]: unknown;
 };
 
@@ -343,6 +341,9 @@ export type WorksCalendarProps = {
    * concern — the engine never sees it.
    */
   getRouteWaypoints?: (fromCode: string, toCode: string) => readonly { lat: number; lng: number }[] | null;
+  /** Geographic route overlay drawn on the dispatch map (e.g. committed
+   *  assignment legs), rendered through the MapAdapter abstraction. */
+  dispatchRoutes?: readonly import('./map').RouteFeature[];
   strictAssetFiltering?: boolean;
   assetRequestCategories?: string[];
   onConflictCheck?: (event: WorksCalendarEvent, candidate: WorksCalendarEvent) => Promise<unknown>;

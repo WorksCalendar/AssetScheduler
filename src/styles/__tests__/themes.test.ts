@@ -9,21 +9,25 @@ import {
   DEFAULT_THEME,
 } from '../themes';
 
+// The theme system was collapsed to a single neutral family ("ops") in two
+// modes — Light and Dark. Legacy family/theme names fold onto light/dark.
+
 // ─── THEMES / THEME_FAMILIES ──────────────────────────────────────────────────
 
 describe('THEMES', () => {
-  it('contains 12 themes (6 families × 2 modes)', () => {
-    expect(THEMES).toHaveLength(12);
+  it('contains 2 themes (light + dark)', () => {
+    expect(THEMES).toEqual(['ops-light', 'ops-dark']);
   });
 
   it('every theme id matches family-mode pattern', () => {
-    expect(THEMES.every(t => /^[a-z]+-(?:light|dark)$/.test(t))).toBe(true);
+    expect(THEMES.every((t) => /^ops-(?:light|dark)$/.test(t))).toBe(true);
   });
 });
 
 describe('THEME_FAMILIES', () => {
-  it('contains 6 families', () => {
-    expect(THEME_FAMILIES).toHaveLength(6);
+  it('contains a single family', () => {
+    expect(THEME_FAMILIES).toHaveLength(1);
+    expect(THEME_FAMILIES[0]!.id).toBe('ops');
   });
 
   it('each family has id, label, description', () => {
@@ -40,7 +44,7 @@ describe('THEME_FAMILIES', () => {
 describe('buildThemeId', () => {
   it('combines family and mode with a hyphen', () => {
     expect(buildThemeId('ops', 'dark')).toBe('ops-dark');
-    expect(buildThemeId('canvas', 'light')).toBe('canvas-light');
+    expect(buildThemeId('ops', 'light')).toBe('ops-light');
   });
 });
 
@@ -55,49 +59,35 @@ describe('normalizeTheme', () => {
     expect(normalizeTheme('')).toBe(DEFAULT_THEME);
   });
 
-  it('maps legacy "light" to "canvas-light"', () => {
-    expect(normalizeTheme('light')).toBe('canvas-light');
+  it('maps "light" / "dark" to the ops themes', () => {
+    expect(normalizeTheme('light')).toBe('ops-light');
+    expect(normalizeTheme('dark')).toBe('ops-dark');
   });
 
-  it('maps legacy "dark" to "canvas-dark"', () => {
-    expect(normalizeTheme('dark')).toBe('canvas-dark');
+  it('folds legacy light-ish names onto ops-light', () => {
+    for (const name of ['minimal', 'corporate', 'soft', 'forest', 'canvas-light', 'grid-light']) {
+      expect(normalizeTheme(name)).toBe('ops-light');
+    }
   });
 
-  it('maps legacy "aviation" to "ops-dark"', () => {
-    expect(normalizeTheme('aviation')).toBe('ops-dark');
+  it('folds legacy dark-ish names onto ops-dark', () => {
+    for (const name of ['aviation', 'ocean', 'canvas-dark', 'neon-dark', 'grid-dark']) {
+      expect(normalizeTheme(name)).toBe('ops-dark');
+    }
   });
 
-  it('maps legacy "minimal" to "grid-light"', () => {
-    expect(normalizeTheme('minimal')).toBe('grid-light');
+  it('passes through the canonical ids', () => {
+    expect(normalizeTheme('ops-light')).toBe('ops-light');
+    expect(normalizeTheme('ops-dark')).toBe('ops-dark');
   });
 
-  it('maps legacy "corporate" to "corporate-light"', () => {
-    expect(normalizeTheme('corporate')).toBe('corporate-light');
-  });
-
-  it('maps legacy "soft" to "neon-light"', () => {
-    expect(normalizeTheme('soft')).toBe('neon-light');
-  });
-
-  it('maps legacy "forest" to "industrial-light"', () => {
-    expect(normalizeTheme('forest')).toBe('industrial-light');
-  });
-
-  it('maps legacy "ocean" to "corporate-dark"', () => {
-    expect(normalizeTheme('ocean')).toBe('corporate-dark');
-  });
-
-  it('passes through valid new-style ThemeId', () => {
-    expect(normalizeTheme('neon-dark')).toBe('neon-dark');
-    expect(normalizeTheme('grid-dark')).toBe('grid-dark');
+  it('is case-insensitive', () => {
+    expect(normalizeTheme('DARK')).toBe('ops-dark');
+    expect(normalizeTheme('Light')).toBe('ops-light');
   });
 
   it('returns DEFAULT_THEME for unrecognized input', () => {
     expect(normalizeTheme('unknown-theme-xyz')).toBe(DEFAULT_THEME);
-  });
-
-  it('returns DEFAULT_THEME for "ops-dark" (the default)', () => {
-    expect(normalizeTheme('ops-dark')).toBe('ops-dark');
   });
 });
 
@@ -120,18 +110,9 @@ describe('THEME_META', () => {
     }
   });
 
-  it('dark mode themes have dark=true', () => {
-    const darkThemes = THEMES.filter(t => t.endsWith('-dark'));
-    for (const id of darkThemes) {
-      expect(THEME_META[id].dark).toBe(true);
-    }
-  });
-
-  it('light mode themes have dark=false', () => {
-    const lightThemes = THEMES.filter(t => t.endsWith('-light'));
-    for (const id of lightThemes) {
-      expect(THEME_META[id].dark).toBe(false);
-    }
+  it('dark theme has dark=true, light has dark=false', () => {
+    expect(THEME_META['ops-dark'].dark).toBe(true);
+    expect(THEME_META['ops-light'].dark).toBe(false);
   });
 });
 
@@ -139,29 +120,22 @@ describe('THEME_META', () => {
 
 describe('resolveCssTheme', () => {
   it('returns default cssTheme when input is undefined', () => {
-    const expected = THEME_META[DEFAULT_THEME].cssTheme;
-    expect(resolveCssTheme(undefined)).toBe(expected);
+    expect(resolveCssTheme(undefined)).toBe(THEME_META[DEFAULT_THEME].cssTheme);
   });
 
-  it('passes through legacy CSS names directly', () => {
+  it('passes through the two shipped CSS names', () => {
     expect(resolveCssTheme('aviation')).toBe('aviation');
     expect(resolveCssTheme('corporate')).toBe('corporate');
-    expect(resolveCssTheme('soft')).toBe('soft');
-    expect(resolveCssTheme('minimal')).toBe('minimal');
-    expect(resolveCssTheme('forest')).toBe('forest');
-    expect(resolveCssTheme('ocean')).toBe('ocean');
-    expect(resolveCssTheme('light')).toBe('light');
-    expect(resolveCssTheme('dark')).toBe('dark');
   });
 
-  it('resolves new-style theme id to cssTheme via THEME_META', () => {
-    expect(resolveCssTheme('canvas-light')).toBe(THEME_META['canvas-light'].cssTheme);
+  it('resolves a theme id to its cssTheme via THEME_META', () => {
+    expect(resolveCssTheme('ops-light')).toBe(THEME_META['ops-light'].cssTheme);
     expect(resolveCssTheme('ops-dark')).toBe(THEME_META['ops-dark'].cssTheme);
   });
 
-  it('normalizes unknown input before resolving', () => {
-    // 'unknown' normalizes to DEFAULT_THEME
-    const expected = THEME_META[DEFAULT_THEME].cssTheme;
-    expect(resolveCssTheme('unknown-xyz')).toBe(expected);
+  it('folds legacy/unknown input onto a shipped cssTheme', () => {
+    expect(resolveCssTheme('light')).toBe(THEME_META['ops-light'].cssTheme);
+    expect(resolveCssTheme('dark')).toBe(THEME_META['ops-dark'].cssTheme);
+    expect(resolveCssTheme('unknown-xyz')).toBe(THEME_META[DEFAULT_THEME].cssTheme);
   });
 });

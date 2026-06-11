@@ -29,7 +29,6 @@ import { useSavedFlash, useFlashWrapped, withFlash } from '../hooks/useSavedFlas
 import { serializeFilters } from '../hooks/useSavedViews';
 import { THEME_FAMILIES, THEME_META, normalizeTheme } from '../styles/themes';
 import SourcePanel from './SourcePanel';
-import ThemeCustomizer from './ThemeCustomizer';
 import AdvancedFilterBuilder from './AdvancedFilterBuilder';
 import SavedFlash from './SavedFlash';
 import { getAssetStatus } from './assetStatus';
@@ -58,7 +57,6 @@ const TABS = [
   { id: 'categories',  label: 'Event Colors' },
   { id: 'assets',      label: 'Assets' },
   { id: 'display',     label: 'Layout & Labels' },
-  { id: 'theme',       label: 'Theme' },
   { id: 'feeds',       label: 'Feeds' },
   { id: 'templates',   label: 'Templates' },
   { id: 'smartViews',  label: 'Saved Views' },
@@ -74,7 +72,7 @@ const TABS = [
 // than implementation. Tab ids are preserved so deep-links (initialTab="assets")
 // and tests targeting role="tab" still work.
 const SECTIONS = [
-  { id: 'appearance',   label: 'Appearance',     tabs: ['setup', 'theme', 'categories'] },
+  { id: 'appearance',   label: 'Appearance',     tabs: ['setup', 'categories'] },
   { id: 'layout',       label: 'Layout & Labels', tabs: ['display'] },
   { id: 'eventDisplay', label: 'Event Display',  tabs: ['hoverCard', 'eventFields'] },
   { id: 'data',         label: 'Data',           tabs: ['assets', 'team', 'feeds', 'templates'] },
@@ -91,8 +89,6 @@ function sectionContaining(tabId: ConfigPanelTabId | string) {
 // intentional — search by intent, not by current tab name.
 const SEARCH_INDEX: Array<{ label: string; keywords?: string; tabId: string }> = [
   // Appearance
-  { label: 'Theme',                         tabId: 'theme',      keywords: 'dark light palette colors background' },
-  { label: 'Custom theme',                  tabId: 'theme',      keywords: 'css variables override' },
   { label: 'Calendar name',                 tabId: 'setup',      keywords: 'title' },
   { label: 'Event colors',                  tabId: 'categories', keywords: 'category color pill' },
   { label: 'Per-category color',            tabId: 'categories', keywords: 'color picker' },
@@ -502,7 +498,6 @@ export default function ConfigPanel({
           {tab === 'categories'  && <CategoriesTab   config={config} onUpdate={onUpdate} />}
           {tab === 'assets'      && <AssetsTab       config={config} onUpdate={onUpdate} items={items} />}
           {tab === 'display'     && <DisplayTab     config={config} onUpdate={onUpdate} />}
-          {tab === 'theme'       && <ThemeCustomizer theme={config['customTheme']} onChange={onUpdate} />}
           {tab === 'feeds'       && (
             <SourcePanel
               sources={sources ?? []}
@@ -580,7 +575,7 @@ function OverviewTab({ goTo }: { goTo: (tabId: string) => void }) {
     {
       heading: 'Appearance',
       cards: [
-        { tabId: 'theme',      title: 'Theme',         desc: 'Light / dark and palette family.' },
+        { tabId: 'setup',      title: 'Theme',         desc: 'Light / dark.' },
         { tabId: 'categories', title: 'Event Colors',  desc: 'Color and label per category.' },
         { tabId: 'setup',      title: 'Calendar name', desc: 'Title shown in the header.' },
       ],
@@ -726,7 +721,7 @@ function SetupTab({
                     className={styles['themeFamilyPill']}
                     style={{
                       background: (selectedMeta.family === family.id ? selectedMeta : lightMeta).preview.accent,
-                      borderRadius: family.id === 'grid' ? '0' : family.id === 'industrial' ? '2px' : family.id === 'neon' || family.id === 'corporate' ? '10px' : '4px',
+                      borderRadius: '4px',
                     }}
                   />
                   <span
@@ -734,7 +729,7 @@ function SetupTab({
                     style={{
                       background: (selectedMeta.family === family.id ? selectedMeta : lightMeta).preview.text,
                       opacity: 0.35,
-                      borderRadius: family.id === 'grid' ? '0' : family.id === 'industrial' ? '2px' : family.id === 'neon' || family.id === 'corporate' ? '10px' : '4px',
+                      borderRadius: '4px',
                     }}
                   />
                 </div>

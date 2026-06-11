@@ -6,7 +6,6 @@ import { buildDefaultFilterSchema, makeResourceResolver } from '../filters/filte
 import type { FilterField } from '../filters/filterSchema';
 import { createInitialFilters, clearFilterValue } from '../filters/filterState';
 import { resolveCssTheme, normalizeTheme, THEME_META } from '../styles/themes';
-import { customThemeToCssVars } from '../core/themeSchema';
 import type { CalendarRole, CalendarView, WorksCalendarProps, EmployeeId, EmployeeRecord } from '../WorksCalendar.types';
 
 export interface UseCalendarSetupInput {
@@ -52,12 +51,10 @@ export function useCalendarSetup({
 }: UseCalendarSetupInput) {
   const ownerCfg = useOwnerConfig({ calendarId, role, onConfigSave, devMode });
   const weekStartDay = (weekStartDayProp ?? ownerCfg.config?.['display']?.weekStartDay ?? 0) as 0 | 1 | 2 | 3 | 4 | 5 | 6;
-  const customThemeVars = useMemo(() => customThemeToCssVars(ownerCfg.config?.['customTheme']), [ownerCfg.config?.['customTheme']]);
   const rootStyle = useMemo<React.CSSProperties>(() => ({
-    ...(customThemeVars ?? {}),
     ...(backgroundImage ? ({ '--wc-bg-image': `url(${backgroundImage})` } as React.CSSProperties) : {}),
-  }), [customThemeVars, backgroundImage]);
-  const rawTheme = theme || ownerCfg.config?.['setup']?.preferredTheme || 'canvas-light';
+  }), [backgroundImage]);
+  const rawTheme = theme || ownerCfg.config?.['setup']?.preferredTheme || 'ops-light';
   const effectiveTheme = resolveCssTheme(rawTheme);
   const themeId = normalizeTheme(rawTheme);
   const themeFamily = THEME_META[themeId].family;

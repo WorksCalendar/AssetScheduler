@@ -19,6 +19,46 @@ export type {
 export { isVisualPriority, isLifecycleState, EVENT_LIFECYCLE_STATES } from './types/events';
 export { default as EventStatusBadge } from './ui/EventStatusBadge';
 export type { EventStatusBadgeProps } from './ui/EventStatusBadge';
+
+// ── Ops-console shell (new layout) ───────────────────────────────────────────
+export { OpsShell, OpsViewHeader, default as OpsShellDefault } from './ui/OpsShell';
+export type {
+  OpsShellProps, OpsViewHeaderProps, OpsTab, OpsBanner, OpsPersona, OpsThemeMode,
+} from './ui/OpsShell';
+export { LocationsView } from './views/LocationsView';
+export type {
+  LocationsViewProps, LocationItem, LocationAsset,
+} from './views/LocationsView';
+export { OpsAlertBar } from './ui/OpsAlertBar';
+export type { OpsAlertBarProps, OpsAlertItem } from './ui/OpsAlertBar';
+export { AssignmentsPanel } from './views/AssignmentsPanel';
+export type { AssignmentsPanelProps, AssignmentRow } from './views/AssignmentsPanel';
+
+// ── Map abstraction (route lines on any host map engine) ─────────────────────
+export type {
+  MapAdapter, LngLat, ScreenPoint, RouteStatus, RouteFeature,
+} from './map/MapAdapter';
+export {
+  interpolateGreatCircle, densifyLeg, densifyPath,
+  projectRoutes, toPolylinePoints,
+} from './map';
+export type { DensifyOptions, ProjectedRoute, ProjectRoutesOptions } from './map';
+export {
+  createLeafletAdapter, createGoogleAdapter, createBingAdapter, createAzureMapsAdapter,
+} from './map';
+export type {
+  LeafletMapLike, GoogleMapLike, GoogleOverlayLike, BingMapLike, BingEventsLike, AzureMapLike,
+} from './map';
+
+// ── Resource allocator (Allocate tab) ────────────────────────────────────────
+export { AllocateView } from './views/AllocateView';
+export type { AllocateViewProps } from './views/AllocateView';
+export { evaluateCandidate, evaluateAll, compareByStatus } from './allocator/evaluate';
+export type {
+  CheckStatus, ResourceKind, ResourceAttributes, ResourceCandidate,
+  DispatchRequirements, CheckResult, CandidateEvaluation, EvaluateOptions,
+} from './allocator/types';
+
 export type { BillableMeta, InvoiceLineItem, InvoiceStatus } from './types/billing';
 export type {
   AssetHealth,
