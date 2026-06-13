@@ -173,8 +173,7 @@ export interface CalendarAdapter {
    * `subscribe` is ingress, `subscribeLifecycle` is egress.
    *
    * Handlers run async (next microtask) and are error-isolated — a throw
-   * in one subscriber does not affect siblings. See `docs/DataAdapter.md`
-   * for the Slack / webhook cookbook.
+   * in one subscriber does not affect siblings.
    */
   subscribeLifecycle?(bus: EventBus): void;
 }

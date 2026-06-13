@@ -1,8 +1,8 @@
 /**
  * Assets Tab — type contracts.
  *
- * Migrated from docs/assets-tab-discovery.md (Phase 0). These types describe
- * the public surface of the Assets (Gantt/resource timeline) view:
+ * These types describe the public surface of the Assets (Gantt/resource
+ * timeline) view:
  *   - ApprovalStage / ApprovalHistoryEntry — workflow on event.meta
  *   - LocationProvider / LocationData      — swappable live-location plugin
  *   - ConflictCheckRequest / Result        — submit-flow conflict contract
