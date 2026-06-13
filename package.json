@@ -59,8 +59,6 @@
     "build:demo": "vite build --config vite.demo.config.ts",
     "test": "cross-env TZ=UTC vitest run",
     "test:watch": "cross-env TZ=UTC vitest",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
     "build": "vite build",
     "type-check": "tsc --noEmit --project tsconfig.build.json",
     "type-check:watch": "tsc --noEmit --project tsconfig.build.json --watch",

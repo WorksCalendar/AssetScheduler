@@ -13,6 +13,6 @@ export default defineConfig({
       'src/**/*.{test,spec}.{js,jsx,ts,tsx}',
       'demo/**/*.{test,spec}.{js,jsx,ts,tsx}',
     ],
-    exclude: ['tests-e2e/**', 'node_modules/**', 'dist/**'],
+    exclude: ['node_modules/**', 'dist/**'],
   },
 });
