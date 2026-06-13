@@ -1,7 +1,7 @@
 {
-  "name": "works-calendar",
+  "name": "asset-scheduler",
   "version": "2.0.0",
-  "description": "Drop-in embeddable React calendar with filtering, scheduling workflows, themes, and external-form support.",
+  "description": "Embeddable React component for visually tracking and scheduling assets — live map, resource allocator, and schedule/asset/location views in one ops console.",
   "license": "MIT",
   "type": "module",
   "module": "./dist/works-calendar.es.js",
@@ -19,57 +19,13 @@
       "import": "./dist/style.css",
       "default": "./dist/style.css"
     },
-    "./styles/aviation": {
-      "import": "./dist/themes/aviation.css",
-      "default": "./dist/themes/aviation.css"
-    },
-    "./styles/soft": {
-      "import": "./dist/themes/soft.css",
-      "default": "./dist/themes/soft.css"
-    },
-    "./styles/minimal": {
-      "import": "./dist/themes/minimal.css",
-      "default": "./dist/themes/minimal.css"
-    },
-    "./styles/corporate": {
-      "import": "./dist/themes/corporate.css",
-      "default": "./dist/themes/corporate.css"
-    },
-    "./styles/forest": {
-      "import": "./dist/themes/forest.css",
-      "default": "./dist/themes/forest.css"
-    },
-    "./styles/ocean": {
-      "import": "./dist/themes/ocean.css",
-      "default": "./dist/themes/ocean.css"
-    },
     "./styles/family": {
       "import": "./dist/themes/family/index.css",
       "default": "./dist/themes/family/index.css"
     },
-    "./styles/family/canvas": {
-      "import": "./dist/themes/family/canvas.css",
-      "default": "./dist/themes/family/canvas.css"
-    },
-    "./styles/family/corporate": {
-      "import": "./dist/themes/family/corporate.css",
-      "default": "./dist/themes/family/corporate.css"
-    },
-    "./styles/family/industrial": {
-      "import": "./dist/themes/family/industrial.css",
-      "default": "./dist/themes/family/industrial.css"
-    },
-    "./styles/family/grid": {
-      "import": "./dist/themes/family/grid.css",
-      "default": "./dist/themes/family/grid.css"
-    },
     "./styles/family/ops": {
       "import": "./dist/themes/family/ops.css",
       "default": "./dist/themes/family/ops.css"
-    },
-    "./styles/family/neon": {
-      "import": "./dist/themes/family/neon.css",
-      "default": "./dist/themes/family/neon.css"
     },
     "./themes": {
       "types": "./dist/index.d.ts",
@@ -92,11 +48,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/workscalendar/calendarthatworks.git"
+    "url": "git+https://github.com/WorksCalendar/AssetScheduler.git"
   },
-  "homepage": "https://workscalendar.com",
+  "homepage": "https://github.com/WorksCalendar/AssetScheduler#readme",
   "bugs": {
-    "url": "https://github.com/workscalendar/calendarthatworks/issues"
+    "url": "https://github.com/WorksCalendar/AssetScheduler/issues"
   },
   "scripts": {
     "dev": "vite --config vite.demo.config.ts",
@@ -189,13 +145,14 @@
     ]
   },
   "keywords": [
-    "calendar",
-    "scheduler",
-    "react-calendar",
-    "team-scheduling",
-    "pto",
-    "drag-and-drop",
-    "timeline",
-    "agenda"
+    "asset-tracking",
+    "asset-scheduling",
+    "dispatch",
+    "fleet",
+    "resource-allocation",
+    "react",
+    "map",
+    "gantt",
+    "scheduler"
   ]
 }

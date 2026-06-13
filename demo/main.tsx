@@ -1,5 +1,5 @@
 /**
- * works-calendar — public demo deployed to workscalendar.com.
+ * Asset Scheduler — ops-console demo.
  *
  * One dataset, every tab. Trucks (assets), drivers (employees), facilities
  * (bases) all share IDs / hub codes so the Month / Week / Schedule / Base /

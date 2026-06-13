@@ -103,6 +103,8 @@ export type {
 } from './types/ui';
 
 export { WorksCalendar }                  from './WorksCalendar.tsx';
+// Product-facing alias — the embeddable asset-scheduler entry point.
+export { WorksCalendar as AssetScheduler } from './WorksCalendar.tsx';
 export { default as ScheduleView }        from './views/ScheduleView';
 
 export { default as MissionHoverCard, allRequirementsMet, meetsAircraftReqs } from './ui/MissionHoverCard';

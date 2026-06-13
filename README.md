@@ -1,337 +1,166 @@
-# WorksCalendar
+# Asset Scheduler
 
-**Embeddable scheduling engine for teams, assets, and operations.** Drop it into a React app and get a working calendar, dispatch board, request queue, and approval pipeline — all driven by one config object.
+**An embeddable React component for visually tracking and scheduling assets.** Drop it into your app to get a live map of where your assets are and where they're headed, a resource allocator that grades and assigns crew/equipment to jobs, and schedule / asset / location views — all in one ops console, driven by your own data.
 
-**Website:** [workscalendar.com](https://workscalendar.com) · **Repository:** [github.com/workscalendar/calendarthatworks](https://github.com/workscalendar/calendarthatworks)
+Built for fleets, dispatch, field operations, and anything else where you need to see assets moving in space and time and commit them to work without double-booking.
 
-WorksCalendar provides the building blocks for advanced scheduling. Applications are expected to configure and extend these systems to fit their workflow.
+## What you get
 
-## Core features (fully working)
-
-- Multiple calendar modes: month, week, day, agenda, schedule, timeline
-- Event lifecycle states (draft → pending → approved → scheduled → completed) surfaced everywhere
-- Conflict engine with hard-block / soft-warning modes, live inline feedback in the editor, and conflict highlights on the calendar
-- Request queue with approve / deny / finalize / revoke actions wired to a tamper-evident audit chain
-- Dispatch readiness board with per-row "Why?" breakdown — driver / pilot / pool shortfalls explained in plain English
-- Schema-driven filtering, saved views, themeable UI with packaged themes
-- Backend-agnostic: feed events via `events` prop, `fetchEvents` callback, or the built-in Supabase connector
-- **Written in strict TypeScript**; ships with generated `.d.ts` so consumer types stay in lockstep with the implementation
-
-## Extensible systems (configurable)
-
-- Approval workflow DSL — multi-tier approvals, SLA timers + escalation, parallel branches with quorum joins (`requireAll` / `requireAny` / `requireN`), and pluggable notification channels (Slack, email, webhook, or your own adapter)
-- Resource pools with a query DSL (capability + distance filters), pool resolution strategies, and per-pool readiness evaluation
-- Requirement templates — declare per-event-type role / pool needs and let `evaluateRequirements` gate the booking
-- Custom resource types, roles, labels, and capability schemas
-
-## Profiles
-
-WorksCalendar ships starter profiles so the same engine fits multiple industries via configuration:
-
-| Profile             | Resource label | Event label | Default roles                                                |
-| ------------------- | -------------- | ----------- | ------------------------------------------------------------ |
-| `air_medical`       | Aircraft       | Mission     | Pilot in Command, Flight Paramedic, Flight Nurse, Dispatcher |
-| `aviation`          | Aircraft       | Flight      | Pilot in Command, Second in Command, Dispatcher              |
-| `trucking`          | Truck          | Load        | Driver, Dispatcher                                           |
-| `equipment_rental`  | Equipment      | Rental      | Yard Attendant, Delivery Driver, Dispatcher                  |
-| `scheduling`        | Room           | Booking     | Organizer, Attendee                                          |
-| `custom`            | Resource       | Event       | (none)                                                       |
-
-Apply a profile via the setup wizard's "What are you scheduling?" step or programmatically:
-
-```ts
-import { applyProfilePreset } from 'works-calendar';
-
-const config = applyProfilePreset('air_medical');
-// config.labels.resource === 'Aircraft'
-// config.roles → [pilot-in-command, flight-paramedic, flight-nurse, …]
-```
-
-Switching profiles changes terminology and defaults without changing logic — the conflict engine, requirement evaluator, and approval reducer all read off the same config.
-
-## New here? Start with the [Setup guide](./docs/Setup.md)
-
-Plain-language walkthrough from `npm install` to a working, connected calendar — pick only the steps you need.
+- **Live asset map** — assets plotted on a basemap with **fading comet tails** showing recent movement and direction, **status-coloured route overlays** for committed jobs (green / amber / red), conflict pulses at facilities, and a thin time-scrubber overlay with a mini-Gantt.
+- **Bring your own map** — route lines and markers render through a small `MapAdapter` contract, so the same geographic data draws correctly at every zoom on **Leaflet, Google Maps, Bing/Azure Maps**, or the built-in SVG basemap. Geography in, projection delegated to the host map.
+- **Resource allocator** — grade every candidate resource **green / amber / red** against a job's requirements (range, capacity, HAZMAT certs, inspection currency, pilot type-rating, licence class, duty-day hours, medical / licence / certification currency), then **assign** — which writes the job back onto the schedule. Double-booking and unmet requirements surface in a persistent **conflict banner**.
+- **Ops-console shell** — a configurable top banner, light/dark, and a bottom tab bar across **Map · Schedule · Assets · Locations · Allocate**.
+- **Backend-agnostic** — feed data via the `events` prop, a `fetchEvents` callback, or the built-in Supabase connector.
+- **Strict TypeScript** — ships generated `.d.ts` so consumer types stay in lockstep with the implementation.
 
 ## Installation
 
 ```bash
-npm install works-calendar
+npm install asset-scheduler
 ```
 
-**Peer dependencies:** React 18 or 19 is required. Install separately if you don't have them:
+**Peer dependencies:** React 18 or 19.
 
 ```bash
 npm install react react-dom
 ```
 
-**Bundler requirement:** WorksCalendar is an ES module library. It works out of the box with Vite, webpack, Parcel, Rollup, and any other modern bundler. It does **not** work when loaded via a plain `<script>` tag alongside a separately-bundled React app — that creates two React instances and breaks hooks. If you need script-tag usage, load React itself from a CDN first and import this package via an ESM-capable `<script type="module">`.
+It's an ES-module library — works with Vite, webpack, Parcel, Rollup, and any modern bundler.
 
 ## Quick start
 
-> **CSS required.** The calendar renders unstyled without it. Import the base styles once, anywhere in your app.
+> **CSS required.** Import the base styles once, anywhere in your app — the component renders unstyled without them.
 
 ```jsx
-import { WorksCalendar } from 'works-calendar';
-import 'works-calendar/styles';        // required — base styles
-import 'works-calendar/styles/ocean';  // optional — theme
+import { AssetScheduler } from 'asset-scheduler';
+import 'asset-scheduler/styles';
 
 export function App() {
+  const assets = [
+    { id: 'T001', label: 'Phoenix Runner 1', group: 'PHX', meta: { type: 'reefer', color: '#ef4444' } },
+  ];
+
   const events = [
     {
-      id: 'shift-1',
-      title: 'Morning shift',
-      start: new Date('2026-05-05T08:00:00'),
-      end:   new Date('2026-05-05T16:00:00'),
-      resource: 'emp-alice',   // links to an employee / resource id
-      category: 'operations',
+      id: 'leg-1',
+      title: 'PHX → LAX',
+      start: new Date('2026-05-05T06:00:00Z'),
+      end:   new Date('2026-05-05T12:00:00Z'),
+      resource: 'T001',
+      meta: {
+        kind: 'leg',
+        fromLat: 33.43, fromLng: -112.01,
+        toLat: 33.94,  toLng: -118.41,
+      },
     },
   ];
 
   return (
-    <WorksCalendar
-      events={events}
-      initialView="week"
-      theme="ocean"
-    />
+    <div style={{ height: '100vh' }}>
+      <AssetScheduler
+        initialView="dispatch"   // the live asset map
+        theme="dark"             // "light" | "dark"
+        assets={assets}
+        events={events}
+      />
+    </div>
   );
 }
 ```
+
+`AssetScheduler` is the embeddable component (also exported as `WorksCalendar` for compatibility). `initialView="dispatch"` lands on the map; `schedule`, `assets`, and `agenda` are also available, and the allocator + location views are exported as standalone pieces you can compose (see below).
+
+## Bring your own map
+
+Route data is geographic (`lng`/`lat`), never pixels — the host map owns the projection, and the overlay re-projects on every pan/zoom so lines stay glued at any zoom level. Wrap your map instance in an adapter:
+
+```ts
+import { createLeafletAdapter, projectRoutes } from 'asset-scheduler';
+
+const adapter = createLeafletAdapter(map); // map = L.map(...)
+
+// Project graded routes to screen-space polylines on each view change.
+const drawn = projectRoutes(adapter, [
+  { id: 'job-1', path: [{ lng: -112.0, lat: 33.4 }, { lng: -118.4, lat: 33.9 }], status: 'amber', label: 'PHX → LAX' },
+]);
+```
+
+Adapters ship for **Leaflet** (`createLeafletAdapter`), **Google Maps** (`createGoogleAdapter`), **Bing** (`createBingAdapter`), and **Azure Maps** (`createAzureMapsAdapter` — the recommended successor to Bing). Each is typed structurally, so the library never hard-depends on a map SDK; you pass your own map object. `densifyPath` / `interpolateGreatCircle` keep long legs curving correctly (great-circle) instead of cutting the projection seam.
+
+## Allocate resources to a job
+
+The allocator is a pure, headless engine plus a presentational view. Each resource declares the capabilities/attributes it carries; a dispatch declares what it requires; `evaluateCandidate` grades the match.
+
+```ts
+import { evaluateCandidate } from 'asset-scheduler';
+
+const result = evaluateCandidate(
+  {
+    id: 'job-1', label: 'PHX → LAX reefer',
+    start: '2026-05-05T08:00:00Z', end: '2026-05-05T16:00:00Z',
+    distanceMiles: 372, loadWeight: 27000,
+    hazmatClasses: ['class-3'], requireInspectionValid: true,
+  },
+  {
+    id: 'T001', label: 'Phoenix Runner 1', kind: 'asset',
+    attributes: { rangeMiles: 800, loadCapacity: 32000, hazmatCerts: ['class-3'], nextInspection: '2026-09-01' },
+  },
+);
+
+result.status; // 'green' | 'amber' | 'red'
+result.checks; // per-requirement reasons, e.g. "Range 800 mi ≥ 372 mi"
+```
+
+Drop in the `AllocateView` for the full UI (dispatch selector, requirement chips, ready/caution/unavailable summary, a **Committed** lane, and assign buttons), or read `evaluateAll` headless and build your own. Capabilities are matched by tags, so adding a new requirement is additive — no brittle row-to-row wiring.
 
 ## Event shape
 
 ```ts
 interface WorksCalendarEvent {
-  id?:            string;
-  title:          string;
-  start:          Date | string;       // ISO string or Date object
-  end?:           Date | string;
-  allDay?:        boolean;
-  resource?:      string;              // employee / asset / resource id
-  category?:      string;
-  color?:         string;              // CSS colour overrides colorRules
-  status?:        'confirmed' | 'tentative' | 'cancelled';
-  lifecycle?:     'draft' | 'pending' | 'approved' | 'scheduled' | 'completed';
-  visualPriority?: 'muted' | 'high';
-  rrule?:         string;              // RFC 5545 RRULE string
-  exdates?:       Array<Date | string>;
-  meta?:          Record<string, unknown>; // arbitrary host data
+  id?:        string;
+  title:      string;
+  start:      Date | string;       // ISO string or Date
+  end?:       Date | string;
+  allDay?:    boolean;
+  resource?:  string;              // links to an asset / employee id
+  category?:  string;
+  color?:     string;
+  meta?:      Record<string, unknown>; // route/stop geo data, status, host fields
 }
 ```
 
-`resource` (not `resourceId`) is the field that links an event to an employee or asset. The value should match the `id` of a record in your `employees` prop array.
+`resource` links an event to an asset or employee (match the `id` in your `assets` / `employees` props). The dispatch map reads geographic legs from `meta` (`kind: 'leg'` with `fromLat/Lng` + `toLat/Lng`).
 
-## Key props
+## Data sources
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `events` | `WorksCalendarEvent[]` | Static event array |
-| `fetchEvents` | `() => Promise<WorksCalendarEvent[]>` | Dynamic loader — called on mount and view change |
-| `employees` | `EmployeeRecord[]` | Team members shown in scheduling views |
-| `initialView` | `'month' \| 'week' \| 'day' \| 'agenda' \| 'schedule' \| 'map'` | Starting view |
-| `theme` | `string` | Theme name (see Theming) |
-| `role` | `'owner' \| 'scheduler' \| 'viewer'` | Permission level — `'owner'` unlocks settings & config |
-| `devMode` | `boolean` | **Local development only.** When `true`, treats the user as an owner regardless of `role`, bypassing every role check. Never pass `true` in production. |
-| `density` | `'comfortable' \| 'compact'` | Force the compact chrome (narrow toolbar, hidden right panel) regardless of container width. Default lets the calendar's own width drive the layout via container queries. |
-| `calendarId` | `string` | Namespace key for localStorage persistence (default: `'default'`) |
-| `onEventSave` | `(event) => void` | Called when a user saves an event in the editor |
-| `onEventDelete` | `(id) => void` | Called when a user deletes an event |
-| `onEventMove` | `(event, newStart, newEnd) => void` | Called after drag-to-move |
-| `filterSchema` | `FilterField[]` | Custom filter fields shown in the filter bar |
-| `colorRules` | `UnknownRecord[]` | Rules that map event fields to colours |
-| `groupBy` | `string \| GroupByInput` | Group events into rows by field |
-
-For the full prop list see the [Setup guide](./docs/Setup.md) or the TypeScript types in `dist/index.d.ts`.
-
-### Supabase connector
-
-Pass your Supabase credentials and events are loaded and persisted automatically — no custom `fetchEvents` needed:
+Static array, async loader, or Supabase:
 
 ```jsx
-<WorksCalendar
+// Async
+<AssetScheduler fetchEvents={async () => (await fetch('/api/events')).json()} />
+
+// Supabase (npm install @supabase/supabase-js)
+<AssetScheduler
   supabaseUrl={import.meta.env.VITE_SUPABASE_URL}
   supabaseKey={import.meta.env.VITE_SUPABASE_KEY}
   supabaseTable="events"
 />
 ```
 
-Requires `npm install @supabase/supabase-js`.
-
-### Custom backend
-
-Supply a `fetchEvents` function for any other source:
+## Theming
 
 ```jsx
-<WorksCalendar
-  fetchEvents={async () => {
-    const res = await fetch('/api/events');
-    return res.json();
-  }}
-  onEventSave={async (event) => {
-    await fetch('/api/events', { method: 'POST', body: JSON.stringify(event) });
-  }}
-/>
+import 'asset-scheduler/styles'; // required base styles
 ```
 
-## Examples
+A single neutral theme in two modes — pass `theme="light"` or `theme="dark"`. The ops-console shell (`OpsShell`) also exposes a light/dark toggle.
 
-Run the local example suite:
+## Demo
 
 ```bash
 npm install
-npm run examples
+npm run dev   # http://localhost:5173 — the ops-console demo (map, allocator, schedule)
 ```
-
-Example catalogs:
-
-- [Examples index](./examples/README.md)
-- [Workflow mapping](./examples/WORKFLOWS.md)
-
-## Documentation
-
-- [Setup guide](./docs/Setup.md) — start here
-- [Docs index](./docs/README.md)
-- [Schedule workflow guide](./docs/ScheduleWorkflow.md)
-- [Approval workflow DSL](./docs/Workflow.md)
-- [Filtering system](./docs/Filtering.md)
-- [Google Calendar setup](./docs/GoogleCalendarSetup.md)
-- [Microsoft 365 setup](./docs/Microsoft365Setup.md)
-- [Contributing](./docs/Contributing.md)
-
-## Theming
-
-Base styles — required:
-
-```jsx
-import 'works-calendar/styles';
-```
-
-Optional theme override:
-
-```jsx
-import 'works-calendar/styles/ocean';
-```
-
-Included packaged themes: `aviation`, `soft`, `minimal`, `corporate`, `forest`, `ocean`.
-
-If you use a CSS bundler that doesn't handle package `exports`, import by file path:
-
-```jsx
-import 'works-calendar/dist/style.css';
-import 'works-calendar/dist/themes/ocean.css';
-```
-
-## Customizing the chrome
-
-The calendar's left icon rail and right panel are two slots embedders can
-extend without forking. The stock chrome (saved-views, focus filters,
-settings, region map, crew on shift) keeps stable positions; your
-content lands after the built-ins.
-
-```tsx
-import {
-  WorksCalendar,
-  RightPanelSection,
-  type LeftRailAction,
-} from 'works-calendar';
-import { Bell, Download } from 'lucide-react';
-
-const railExtras: LeftRailAction[] = [
-  {
-    id: 'export',
-    label: 'Export',
-    hint: 'Download visible events as CSV',
-    icon: <Download size={18} aria-hidden="true" />,
-    onClick: () => exportCsv(),
-  },
-  {
-    id: 'notifications',
-    label: 'Notifications',
-    icon: <Bell size={18} aria-hidden="true" />,
-    onClick: () => openNotificationDrawer(),
-  },
-];
-
-<WorksCalendar
-  events={events}
-  leftRailExtras={railExtras}
-  rightPanelExtras={
-    <>
-      <RightPanelSection title="Open tickets">
-        <MyTicketWidget />
-      </RightPanelSection>
-      <RightPanelSection title="Compliance">
-        <MyComplianceWidget />
-      </RightPanelSection>
-    </>
-  }
-/>
-```
-
-`leftRailExtras` takes `LeftRailAction[]` (`id` / `label` / `icon` /
-optional `hint` / optional `active` / `onClick`). Built-in ids
-(`saved-views`, `focus`, `settings`) are reserved — extras using them
-are filtered out so a typo can't shadow the chrome.
-
-`rightPanelExtras` takes any `ReactNode`. Wrap each section in
-`<RightPanelSection title="…">` so theme tokens + section dividers
-match the stock content above.
-
-## Optional view plugins
-
-Some views are shipped behind optional peer dependencies so the core bundle
-stays slim. They are auto-detected at runtime — install the peers and the view
-renders; skip them and a graceful install hint is shown instead.
-
-### Map view
-
-Plot events with coordinates on a MapLibre basemap.
-
-```bash
-npm install maplibre-gl react-map-gl
-```
-
-```jsx
-import { WorksCalendar } from 'works-calendar';
-
-const events = [
-  {
-    id: 'kphx-1',
-    title: 'Phoenix arrival',
-    start: new Date(),
-    meta: { coords: { lat: 33.43, lon: -112.01 } },
-  },
-];
-
-<WorksCalendar events={events} initialView="map" />;
-```
-
-Coordinates are read from `event.meta.coords` (`{ lat, lon }`, matching the
-`LocationData` shape) — `event.meta.lat` + `event.meta.lon`/`meta.lng` is also
-accepted as a loose convenience form. Marker color resolves through the same
-`colorRules` as every other view.
-
-`MapView` is also exported standalone for custom layouts:
-
-```jsx
-import { MapView } from 'works-calendar';
-
-<MapView
-  events={events}
-  onEventClick={ev => console.log(ev)}
-  mapStyle="https://api.maptiler.com/maps/streets/style.json?key=YOUR_KEY"
-/>;
-```
-
-The default `mapStyle` is MapLibre's free demo tile server — fine for local
-development; production hosts should pass their own style URL (MapTiler,
-Stadia, Protomaps, self-hosted, …).
-
-## Release & project status
-
-- [Release readiness checklist](./docs/release-readiness.md)
-- [Product roadmap](./docs/Roadmap.md)
-- [Initial release notes draft](./docs/releases/v0.1.0.md)
 
 ## License
 
