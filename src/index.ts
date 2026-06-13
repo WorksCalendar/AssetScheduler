@@ -103,8 +103,10 @@ export type {
 } from './types/ui';
 
 export { WorksCalendar }                  from './WorksCalendar.tsx';
-// Product-facing alias — the embeddable asset-scheduler entry point.
-export { WorksCalendar as AssetScheduler } from './WorksCalendar.tsx';
+// The turnkey embeddable console — the product entry point (map + schedule +
+// assets + locations + resource allocator in one ops shell).
+export { AssetConsole, AssetConsole as AssetScheduler } from './AssetConsole';
+export type { AssetConsoleProps, AssignmentMap } from './AssetConsole';
 export { default as ScheduleView }        from './views/ScheduleView';
 
 export { default as MissionHoverCard, allRequirementsMet, meetsAircraftReqs } from './ui/MissionHoverCard';

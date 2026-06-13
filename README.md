@@ -58,17 +58,20 @@ export function App() {
   return (
     <div style={{ height: '100vh' }}>
       <AssetScheduler
-        initialView="dispatch"   // the live asset map
-        theme="dark"             // "light" | "dark"
+        banner={{ title: 'Fleet Ops', subtitle: 'Dispatch', logoText: 'FO' }}
+        defaultMode="dark"            // "light" | "dark"
         assets={assets}
         events={events}
+        // dispatches={...} + resources={...} power the Allocate tab (optional)
       />
     </div>
   );
 }
 ```
 
-`AssetScheduler` is the embeddable component (also exported as `WorksCalendar` for compatibility). `initialView="dispatch"` lands on the map; `schedule`, `assets`, and `agenda` are also available, and the allocator + location views are exported as standalone pieces you can compose (see below).
+`AssetScheduler` is the turnkey console — banner, light/dark, and a bottom tab bar across **Map · Schedule · Assets · Locations · Allocate**, with assignment write-back and the conflict banner wired up. Assignment state and light/dark are controlled-or-uncontrolled: pass `assignments` + `onAssignmentsChange` (and `mode` + `onModeChange`) to own and persist them, or omit them and the console manages its own.
+
+Need just the calendar/dispatch view without the shell? `WorksCalendar` is the lower-level component the console wraps.
 
 ## Bring your own map
 
