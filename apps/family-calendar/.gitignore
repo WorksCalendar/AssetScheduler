@@ -1,0 +1,8 @@
+# Wifi passwords and API tokens for a specific house.
+firmware/*/config_local.h
+
+# A calendar database created by running the server from inside the checkout.
+server/*.db
+server/*.db-wal
+server/*.db-shm
+data/
